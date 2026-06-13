@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { C } from "./tokens";
 import { getOrCreateUser } from "./lib/db";
-import { getOrCreateUsername } from './lib/username';
+import { getOrCreateUsername } from "./lib/username";
 import Header from "./components/Header";
 import BottomNav from "./components/BottomNav";
 import Home from "./screens/Home";
@@ -14,6 +14,7 @@ import Battles from "./screens/Battles";
 import Settings from "./screens/Settings";
 import Profile from "./screens/Profile";
 import Connect from "./screens/Connect";
+import { Analytics } from "@vercel/analytics/react"
 
 export default function App() {
   const [screen, setScreen] = useState(0);
@@ -23,10 +24,14 @@ export default function App() {
   const [category, setCategory] = useState("general");
   const [navActive, setNavActive] = useState(0);
   const [user, setUser] = useState(null);
-  
+  return (
+    <>
+      <Analytics />
+    </>
+  );
   useEffect(() => {
     const username = getOrCreateUsername();
-    getOrCreateUser(username).then(u => setUser(u));
+    getOrCreateUser(username).then((u) => setUser(u));
   }, []);
   const [avatar, setAvatar] = useState(
     () => localStorage.getItem("cm_avatar") || "🎲"
