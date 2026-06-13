@@ -3,6 +3,9 @@ import { C, gr } from '../tokens';
 import { getLevelInfo } from '../data/levels';
 import { getSetting, setSetting, KEYS, clearConnectHistory } from '../lib/storage';
 import { supabase } from '../lib/supabase';
+import { setUsername as saveUsernameLocal } from '../lib/username';
+import { updateUsername } from '../lib/db';
+
 
 function Toggle({ on, toggle }) {
   return (
@@ -53,6 +56,37 @@ export default function Settings({ user }) {
   const [haptic, setHaptic] = useState(() => getSetting(KEYS.HAPTIC, true));
   const [showConfirm, setShowConfirm] = useState(false);
   const [cleared, setCleared] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+const [newName, setNewName] = useState(user?.username || '');
+const [nameError, setNameError] = useState('');
+const [nameSaved, setNameSaved] = useState(false);
+
+async function handleSaveUsername() {
+  const trimmed = newName.trim().toLowerCase().replace(/\s+/g, '_');
+
+  if (!trimmed || trimmed.length < 3) {
+    setNameError('Username must be at least 3 characters');
+    return;
+  }
+  if (!/^[a-z0-9_]+$/.test(trimmed)) {
+    setNameError('Only lowercase letters, numbers, and underscores');
+    return;
+  }
+
+  const result = await updateUsername(user.id, trimmed);
+  if (result.success) {
+    saveUsernameLocal(trimmed);
+    setNameError('');
+    setEditingName(false);
+    setNameSaved(true);
+    setTimeout(() => setNameSaved(false), 2000);
+    // Reload to refresh user object everywhere
+    window.location.reload();
+  } else {
+    setNameError('That username is taken or invalid');
+  }
+}
+
 
   const totalXP = user?.xp || 0;
   const lvl = getLevelInfo(totalXP);
@@ -130,7 +164,72 @@ export default function Settings({ user }) {
             borderRadius: 3, transition: 'width 0.6s ease',
           }} />
         </div>
+      </div>{/* Username */}
+<div>
+  <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em',
+    color: C.muted, margin: '0 0 10px' }}>ACCOUNT</p>
+  <div style={{ background: C.glass, border: `1px solid ${C.glassBdr}`,
+    borderRadius: 20, padding: '16px' }}>
+    {!editingName ? (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <div style={{ fontSize: 11, color: C.muted, marginBottom: 2 }}>Username</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: 'white' }}>
+            @{user?.username}
+          </div>
+        </div>
+        <button onClick={() => { setEditingName(true); setNewName(user?.username || ''); }} style={{
+          background: gr(), border: 'none', borderRadius: 10,
+          padding: '8px 14px', color: 'white', fontSize: 12,
+          fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+        }}>Edit</button>
       </div>
+    ) : (
+      <div>
+        <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>
+          New username
+        </div>
+        <input
+          value={newName}
+          onChange={e => { setNewName(e.target.value); setNameError(''); }}
+          placeholder="your_username"
+          style={{
+            width: '100%', background: 'rgba(255,255,255,0.08)',
+            border: `1px solid ${C.glassBdr}`, borderRadius: 10,
+            padding: '10px 12px', color: 'white', fontSize: 14,
+            fontWeight: 600, outline: 'none', fontFamily: 'inherit',
+            marginBottom: 8, boxSizing: 'border-box',
+          }}
+        />
+        {nameError && (
+          <div style={{ fontSize: 11, color: C.red, marginBottom: 8 }}>
+            {nameError}
+          </div>
+        )}
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={handleSaveUsername} style={{
+            flex: 1, background: gr(), border: 'none', borderRadius: 10,
+            padding: '10px', color: 'white', fontSize: 13,
+            fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+          }}>Save</button>
+          <button onClick={() => { setEditingName(false); setNameError(''); }} style={{
+            flex: 1, background: C.glass, border: `1px solid ${C.glassBdr}`,
+            borderRadius: 10, padding: '10px', color: 'white', fontSize: 13,
+            fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+          }}>Cancel</button>
+        </div>
+      </div>
+    )}
+  </div>
+  {nameSaved && (
+    <div style={{ fontSize: 11, color: C.emerald, marginTop: 8, textAlign: 'center' }}>
+      ✓ Username updated
+    </div>
+  )}
+</div>
+
+
+
 
       {/* Preferences */}
       <div>

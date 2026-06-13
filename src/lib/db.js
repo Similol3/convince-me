@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
 import { XP } from '../data/levels';
 
-// ── Save a decision to database ───────────────────────────
+// ── Save a decision ────────────────────────────────────────
 export async function saveDecision({
   userId, optionA, optionB, winner, loser,
   votesA, votesB, category,
@@ -10,15 +10,15 @@ export async function saveDecision({
   const { data, error } = await supabase
     .from('decisions')
     .insert({
-      user_id:       userId,
-      option_a:      optionA,
-      option_b:      optionB,
+      user_id:        userId,
+      option_a:       optionA,
+      option_b:       optionB,
       winner,
       loser,
-      votes_a:       votesA,
-      votes_b:       votesB,
+      votes_a:        votesA,
+      votes_b:        votesB,
       category,
-      was_draw:      wasDraw,
+      was_draw:       wasDraw,
       was_close_call: wasCloseCall,
     });
 
@@ -28,9 +28,8 @@ export async function saveDecision({
 
 // ── Update user XP, coins, streak ─────────────────────────
 export async function updateUserStats({
-  userId, xpToAdd, coinsToAdd, wasDraw,
+  userId, xpToAdd, coinsToAdd,
 }) {
-  // First get current stats
   const { data: user } = await supabase
     .from('users')
     .select('xp, coins, streak, total_decisions, last_decision_date')
@@ -44,12 +43,11 @@ export async function updateUserStats({
   const yesterday = new Date(Date.now() - 86400000)
     .toISOString().split('T')[0];
 
-  // Calculate new streak
   let newStreak = user.streak;
   if (lastDate === yesterday) {
-    newStreak = user.streak + 1; // continuing streak
+    newStreak = user.streak + 1;
   } else if (lastDate !== today) {
-    newStreak = 1; // streak reset
+    newStreak = 1;
   }
 
   const streakBonus = newStreak > user.streak ? XP.streak : 0;
@@ -57,10 +55,10 @@ export async function updateUserStats({
   await supabase
     .from('users')
     .update({
-      xp:                user.xp + xpToAdd + streakBonus,
-      coins:             user.coins + coinsToAdd,
-      streak:            newStreak,
-      total_decisions:   user.total_decisions + 1,
+      xp:                 user.xp + xpToAdd + streakBonus,
+      coins:              user.coins + coinsToAdd,
+      streak:             newStreak,
+      total_decisions:    user.total_decisions + 1,
       last_decision_date: today,
     })
     .eq('id', userId);
@@ -79,9 +77,8 @@ export async function getRecentDecisions(userId) {
   return data || [];
 }
 
-// ── Get or create a user ──────────────────────────────────
+// ── Get or create a user by username ──────────────────────
 export async function getOrCreateUser(username) {
-  // Check if exists
   const { data: existing } = await supabase
     .from('users')
     .select('*')
@@ -90,12 +87,28 @@ export async function getOrCreateUser(username) {
 
   if (existing) return existing;
 
-  // Create new user
-  const { data: newUser } = await supabase
+  const { data: newUser, error } = await supabase
     .from('users')
-    .insert({ username, email: `${username}@demo.com` })
+    .insert({ username, email: `${username}@convinceme.local` })
     .select()
     .single();
 
+  if (error) console.error('Create user error:', error);
   return newUser;
+}
+
+// ── Update username ─────────────────────────────────────────
+export async function updateUsername(userId, newUsername) {
+  const { data, error } = await supabase
+    .from('users')
+    .update({ username: newUsername, email: `${newUsername}@convinceme.local` })
+    .eq('id', userId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Update username error:', error);
+    return { success: false, error };
+  }
+  return { success: true, data };
 }

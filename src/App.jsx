@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { C } from "./tokens";
 import { getOrCreateUser } from "./lib/db";
+import { getOrCreateUsername } from './lib/username';
 import Header from "./components/Header";
 import BottomNav from "./components/BottomNav";
 import Home from "./screens/Home";
@@ -22,9 +23,10 @@ export default function App() {
   const [category, setCategory] = useState("general");
   const [navActive, setNavActive] = useState(0);
   const [user, setUser] = useState(null);
-
+  
   useEffect(() => {
-    getOrCreateUser("ghost_digits").then((u) => setUser(u));
+    const username = getOrCreateUsername();
+    getOrCreateUser(username).then(u => setUser(u));
   }, []);
   const [avatar, setAvatar] = useState(
     () => localStorage.getItem("cm_avatar") || "🎲"
