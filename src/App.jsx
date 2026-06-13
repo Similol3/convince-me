@@ -24,11 +24,8 @@ export default function App() {
   const [category, setCategory] = useState("general");
   const [navActive, setNavActive] = useState(0);
   const [user, setUser] = useState(null);
-  return (
-    <>
-      <Analytics />
-    </>
-  );
+  
+  
   useEffect(() => {
     const username = getOrCreateUsername();
     getOrCreateUser(username).then((u) => setUser(u));
@@ -129,6 +126,7 @@ export default function App() {
         </div>
 
         <BottomNav active={navActive} setActive={handleNav} />
+        <Analytics />
       </div>
     </div>
   );
