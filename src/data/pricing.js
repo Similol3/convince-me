@@ -5,6 +5,8 @@ export const PRO_FEATURES = [
       desc: '12 extra premium avatars' },
     { id: 'pro_badge', emoji: '👑', label: 'Pro badge on profile',
       desc: 'Show off your support' },
+    { id: 'custom_photo', emoji: '🖼️', label: 'Custom photo avatar',
+        desc: 'Upload your own profile picture from your gallery' },      
     { id: 'no_ads', emoji: '🚫', label: 'Ad-free forever',
       desc: 'Skip any future ads' },
   ];
