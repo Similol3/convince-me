@@ -19,7 +19,7 @@ import Profile from './screens/Profile';
 import Connect from './screens/Connect';
 import Upgrade from './screens/Upgrade';
 import Leaderboard from './screens/Leaderboard';
-import { Analytics } from '@vercel/analytics/next';
+import { Analytics } from '@vercel/analytics/react';
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -174,8 +174,7 @@ export default function App() {
       }}>
 
         {/* Status bar */}
-       
-
+      
         <Header
           showBack={hc.showBack}
           streak={hc.streak}
@@ -208,7 +207,7 @@ export default function App() {
         </div>
 
         <BottomNav active={navActive} setActive={handleNav} />
-        <Analytics/>
+        <Analytics />
       </div>
     </div>
   );

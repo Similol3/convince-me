@@ -39,35 +39,40 @@ Write ONE short, genuine reply (under 20 words). Return ONLY the message text, n
   }
 
   try {
-    const parts = [];
+    const messageContent = [];
 
     if (image && situationId === 'reply_story') {
       const base64Data = image.split(',')[1];
-      const mimeType   = image.split(';')[0].split(':')[1];
-      parts.push({ inline_data: { mime_type: mimeType, data: base64Data } });
+      const mediaType  = image.split(';')[0].split(':')[1];
+      messageContent.push({
+        type: 'image',
+        source: { type: 'base64', media_type: mediaType, data: base64Data },
+      });
     }
-    parts.push({ text: promptText });
+    messageContent.push({ type: 'text', text: promptText });
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts }],
-          generationConfig: { maxOutputTokens: 100, temperature: 0.9 },
-        }),
-      }
-    );
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 100,
+        messages: [{ role: 'user', content: messageContent }],
+      }),
+    });
 
     const data = await response.json();
 
     if (!response.ok) {
-      console.error('Gemini error:', data);
+      console.error('Anthropic error:', data);
       return res.status(500).json({ error: 'AI request failed', details: data });
     }
 
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+    const text = data.content.map(c => c.text || '').join('').trim();
     return res.status(200).json({ message: text });
 
   } catch (err) {
