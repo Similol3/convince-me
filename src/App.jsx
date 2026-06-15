@@ -40,8 +40,11 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [avatar, setAvatar] = useState("🎲");
 
-  const [time, setTime] = useState(new Date());
-  const [battery, setBattery] = useState(100);
+  const [lastResult, setLastResult] = useState(null);
+
+  function handleDecided(result) {
+    setLastResult(result);
+  }
 
   // ── Auth check on load ──────────────────────────────────
   useEffect(() => {
@@ -223,10 +226,15 @@ export default function App() {
               user={user}
               category={category}
               go={go}
+              onDecided={handleDecided}
             />
           )}
+          {screen === 5 && (
+            <Rematch result={lastResult} onDecided={handleDecided} go={go} />
+          )}
+
           {screen === 4 && <Share optA={optA} go={go} />}
-          {screen === 5 && <Rematch go={go} />}
+
           {screen === 6 && <Battles user={user} />}
           {screen === 7 && <Settings user={user} onSignOut={signOut} />}
           {screen === 8 && <Profile user={user} go={go} avatar={avatar} />}
