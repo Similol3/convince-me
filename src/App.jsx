@@ -24,7 +24,6 @@ import Profile from "./screens/Profile";
 import Connect from "./screens/Connect";
 import Upgrade from "./screens/Upgrade";
 import Leaderboard from "./screens/Leaderboard";
-import { Analytics } from "@vercel/analytics/react";
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -39,12 +38,10 @@ export default function App() {
   const [navActive, setNavActive] = useState(0);
   const [user, setUser] = useState(null);
   const [avatar, setAvatar] = useState("🎲");
-
   const [lastResult, setLastResult] = useState(null);
 
-  function handleDecided(result) {
-    setLastResult(result);
-  }
+  const [time, setTime] = useState(new Date());
+  const [battery, setBattery] = useState(100);
 
   // ── Auth check on load ──────────────────────────────────
   useEffect(() => {
@@ -104,13 +101,21 @@ export default function App() {
     if (i === 3) go(8); // Profile
   };
 
+  function handleDecided(result) {
+    setLastResult(result);
+  }
+
   async function handleAvatarChange(a) {
     setAvatar(a);
     if (user) {
-      await supabase.from("users").update({ avatar: a }).eq("id", user.id);
-      setUser({ ...user, avatar: a });
+      await supabase
+        .from("users")
+        .update({ avatar: a, avatar_image: null })
+        .eq("id", user.id);
+      setUser({ ...user, avatar: a, avatar_image: null });
     }
   }
+
   async function handleAvatarImageChange(base64) {
     if (user) {
       await supabase
@@ -138,7 +143,13 @@ export default function App() {
 
   const hc = headerConfig[screen] || {};
 
-  // ── AUTH GATE — show login/signup/forgot if not logged in ──
+  function handleBack() {
+    if (screen === 7) return go(8); // Settings -> Profile
+    if (screen === 13 || screen === 14) return go(0); // Upgrade/Leaderboard -> Home
+    go(Math.max(0, screen - 1));
+  }
+
+  // ── AUTH GATE ──────────────────────────────────────────
   if (authLoading) {
     return (
       <div
@@ -176,7 +187,7 @@ export default function App() {
     );
   }
 
-  // ── MAIN APP ──────────────────────────────────────────────
+  // ── MAIN APP ──────────────────────────────────────────
   return (
     <div
       style={{
@@ -198,6 +209,63 @@ export default function App() {
           position: "relative",
         }}
       >
+        {/* Status bar */}
+        <div
+          style={{
+            height: 44,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "0 24px",
+            background: C.bg,
+            borderBottom: `1px solid ${C.border}`,
+          }}
+        >
+          <span
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              color: "rgba(255,255,255,0.6)",
+            }}
+          >
+            {formatTime(time)}
+          </span>
+          <div
+            style={{
+              width: 86,
+              height: 22,
+              borderRadius: 11,
+              background: "rgba(0,0,0,0.85)",
+              border: `1px solid ${C.border}`,
+            }}
+          />
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>
+              {battery}%
+            </span>
+            <div
+              style={{
+                width: 20,
+                height: 10,
+                borderRadius: 2,
+                border: "1px solid rgba(255,255,255,0.4)",
+                display: "flex",
+                alignItems: "center",
+                padding: 1,
+              }}
+            >
+              <div
+                style={{
+                  height: "100%",
+                  borderRadius: 1,
+                  width: `${battery}%`,
+                  background: battery > 20 ? "#10B981" : "#EF4444",
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
         <Header
           showBack={hc.showBack}
           streak={hc.streak}
@@ -208,10 +276,7 @@ export default function App() {
           isPro={user?.is_pro || false}
           onLeaderboard={() => go(14)}
           onUpgrade={() => go(13)}
-          onBack={() => {
-            if (screen === 7) go(8);
-            else go(Math.max(0, screen - 1));
-          }}
+          onBack={handleBack}
         />
 
         <div style={{ flex: 1, overflowY: "auto", paddingBottom: 110 }}>
@@ -229,12 +294,10 @@ export default function App() {
               onDecided={handleDecided}
             />
           )}
+          {screen === 4 && <Share optA={optA} go={go} />}
           {screen === 5 && (
             <Rematch result={lastResult} onDecided={handleDecided} go={go} />
           )}
-
-          {screen === 4 && <Share optA={optA} go={go} />}
-
           {screen === 6 && <Battles user={user} />}
           {screen === 7 && <Settings user={user} onSignOut={signOut} />}
           {screen === 8 && <Profile user={user} go={go} avatar={avatar} />}
@@ -244,7 +307,6 @@ export default function App() {
         </div>
 
         <BottomNav active={navActive} setActive={handleNav} />
-        <Analytics />
       </div>
     </div>
   );

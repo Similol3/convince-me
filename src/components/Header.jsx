@@ -13,13 +13,6 @@ export default function Header({
   async function handlePhotoUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
-
-    if (!isPro) {
-      setShowPicker(false);
-      onUpgrade();
-      return;
-    }
-
     const resized = await resizeImageToBase64(file, 200);
     onAvatarImageChange(resized);
     setShowPicker(false);
@@ -101,18 +94,36 @@ export default function Header({
             borderRadius: 16, padding: 12, width: 220,
             boxShadow: '0 12px 32px rgba(0,0,0,0.5)',
           }}>
-            <label style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              background: isPro ? gr() : C.glass,
-              border: `1px solid ${C.glassBdr}`, borderRadius: 12,
-              padding: '10px 12px', marginBottom: 10, cursor: 'pointer',
-            }}>
-              <span style={{ fontSize: 16 }}>🖼️</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: 'white' }}>
-                {isPro ? 'Upload Photo' : 'Upload Photo 👑 Pro'}
-              </span>
-              <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} />
-            </label>
+            {isPro ? (
+              <label style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                background: gr(), border: `1px solid ${C.glassBdr}`,
+                borderRadius: 12, padding: '10px 12px', marginBottom: 10, cursor: 'pointer',
+              }}>
+                <span style={{ fontSize: 16 }}>🖼️</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: 'white' }}>Upload Photo</span>
+                <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} />
+              </label>
+            ) : (
+              <div style={{
+                background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)',
+                borderRadius: 12, padding: '10px 12px', marginBottom: 10,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <span style={{ fontSize: 16 }}>👑</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'white' }}>
+                    Custom photos are a Pro feature
+                  </span>
+                </div>
+                <button onClick={() => { setShowPicker(false); onUpgrade(); }} style={{
+                  background: gr(), border: 'none', borderRadius: 8,
+                  padding: '6px 12px', color: 'white', fontSize: 11,
+                  fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', width: '100%',
+                }}>
+                  Upgrade to Pro →
+                </button>
+              </div>
+            )}
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
               {AVATARS.map(a => (
