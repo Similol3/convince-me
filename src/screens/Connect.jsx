@@ -2,6 +2,7 @@ import { useState } from "react";
 import { C, gr } from "../tokens";
 import { generateMessage } from "../lib/ai";
 import { addConnectHistory, getConnectHistory } from "../lib/storage";
+import { AUDIENCES, TONES } from "../data/ConnectOptions";
 import { FREE_DAILY_CONNECT_LIMIT } from "../data/pricing";
 
 const SITUATIONS = [
@@ -25,17 +26,76 @@ const SITUATIONS = [
   },
 ];
 
+const backBtn = {
+  background: "transparent",
+  border: "none",
+  color: C.muted,
+  fontSize: 13,
+  cursor: "pointer",
+  fontFamily: "inherit",
+  padding: 0,
+  textAlign: "left",
+  display: "flex",
+  alignItems: "center",
+  gap: 6,
+};
+
+const pageTitle = { fontSize: 22, fontWeight: 900, color: "white", margin: 0 };
+const pageSub = { fontSize: 13, color: C.sub, margin: "6px 0 0" };
+
+const optionCard = {
+  background: C.glass,
+  border: `1px solid ${C.glassBdr}`,
+  borderRadius: 16,
+  padding: "20px 14px",
+  cursor: "pointer",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  gap: 8,
+  fontFamily: "inherit",
+};
+
 export default function Connect({ user, go }) {
-  const [step, setStep] = useState("pick"); // pick | input | result | history
+  const [step, setStep] = useState("pick"); // pick | audience | tone | input | result | history | limit
   const [situation, setSituation] = useState(null);
+  const [audience, setAudience] = useState(null);
+  const [tone, setTone] = useState(null);
   const [context, setContext] = useState("");
   const [image, setImage] = useState(null);
   const [picked, setPicked] = useState(null);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const isPro = user?.is_pro || false;
+
+  function getTodayCount() {
+    const today = new Date().toISOString().split("T")[0];
+    const stored = JSON.parse(localStorage.getItem("cm_connect_count") || "{}");
+    return stored.date === today ? stored.count : 0;
+  }
+  function incrementTodayCount() {
+    const today = new Date().toISOString().split("T")[0];
+    const current = getTodayCount();
+    localStorage.setItem(
+      "cm_connect_count",
+      JSON.stringify({ date: today, count: current + 1 })
+    );
+  }
+
+  const todayCount = getTodayCount();
+  const limitReached = !isPro && todayCount >= FREE_DAILY_CONNECT_LIMIT;
+
   function selectSituation(sit) {
     setSituation(sit);
+    setStep("audience");
+  }
+  function selectAudience(a) {
+    setAudience(a);
+    setStep("tone");
+  }
+  function selectTone(t) {
+    setTone(t);
     setStep("input");
   }
 
@@ -46,42 +106,7 @@ export default function Connect({ user, go }) {
     reader.onload = () => setImage(reader.result);
     reader.readAsDataURL(file);
   }
-  function getTodayCount() {
-    const today = new Date().toISOString().split("T")[0];
-    const stored = JSON.parse(localStorage.getItem("cm_connect_count") || "{}");
-    return stored.date === today ? stored.count : 0;
-  }
 
-  function incrementTodayCount() {
-    const today = new Date().toISOString().split("T")[0];
-    const current = getTodayCount();
-    localStorage.setItem(
-      "cm_connect_count",
-      JSON.stringify({ date: today, count: current + 1 })
-    );
-  }
-
-  const isPro = user?.is_pro || false;
-  const todayCount = getTodayCount();
-  const limitReached = !isPro && todayCount >= FREE_DAILY_CONNECT_LIMIT;
-
-  async function generate() {
-    setLoading(true);
-    setStep("result");
-
-    const text = await generateMessage(situation.id, context, image);
-    setPicked(text);
-
-    addConnectHistory({
-      situationId: situation.id,
-      situationEmoji: situation.emoji,
-      situationTitle: situation.title,
-      context,
-      message: text,
-    });
-
-    setLoading(false);
-  }
   async function generate() {
     if (limitReached) {
       setStep("limit");
@@ -91,19 +116,26 @@ export default function Connect({ user, go }) {
     setLoading(true);
     setStep("result");
 
-    const text = await generateMessage(situation.id, context, image);
+    const text = await generateMessage(
+      situation.id,
+      context,
+      image,
+      audience?.id,
+      tone?.id
+    );
     setPicked(text);
 
     addConnectHistory({
       situationId: situation.id,
       situationEmoji: situation.emoji,
       situationTitle: situation.title,
+      audience: audience?.label,
+      tone: tone?.label,
       context,
       message: text,
     });
 
     if (!isPro) incrementTodayCount();
-
     setLoading(false);
   }
 
@@ -116,13 +148,14 @@ export default function Connect({ user, go }) {
   function reset() {
     setStep("pick");
     setSituation(null);
+    setAudience(null);
+    setTone(null);
     setContext("");
     setImage(null);
     setPicked(null);
     setCopied(false);
   }
 
-  // Format relative time
   function timeAgo(iso) {
     const diff = Date.now() - new Date(iso).getTime();
     const mins = Math.floor(diff / 60000);
@@ -145,7 +178,7 @@ export default function Connect({ user, go }) {
         background: `radial-gradient(ellipse 90% 50% at 50% 0%, rgba(6,182,212,0.18) 0%, ${C.bg} 60%)`,
       }}
     >
-      {/* ── PICK ── */}
+      {/* ── PICK SITUATION ── */}
       {step === "pick" && (
         <>
           <div>
@@ -159,15 +192,8 @@ export default function Connect({ user, go }) {
             >
               Need something to say?
             </h1>
-            <p
-              style={{
-                fontSize: 13,
-                color: C.sub,
-                margin: "6px 0 0",
-                lineHeight: 1.5,
-              }}
-            >
-              Pick a situation and AI will craft the right words.
+            <p style={pageSub}>
+              Pick a situation and we'll craft the right words.
             </p>
           </div>
 
@@ -250,25 +276,71 @@ export default function Connect({ user, go }) {
         </>
       )}
 
+      {/* ── AUDIENCE ── */}
+      {step === "audience" && situation && (
+        <>
+          <button onClick={() => setStep("pick")} style={backBtn}>
+            ← Back
+          </button>
+          <div>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>
+              {situation.emoji}
+            </div>
+            <h2 style={pageTitle}>Who's this for?</h2>
+            <p style={pageSub}>This helps us nail the right tone</p>
+          </div>
+          <div
+            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
+          >
+            {AUDIENCES.map((a) => (
+              <button
+                key={a.id}
+                onClick={() => selectAudience(a)}
+                style={optionCard}
+              >
+                <span style={{ fontSize: 28 }}>{a.emoji}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "white" }}>
+                  {a.label}
+                </span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* ── TONE ── */}
+      {step === "tone" && situation && (
+        <>
+          <button onClick={() => setStep("audience")} style={backBtn}>
+            ← Back
+          </button>
+          <div>
+            <h2 style={pageTitle}>What's the vibe?</h2>
+            <p style={pageSub}>Pick the tone for your message</p>
+          </div>
+          <div
+            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
+          >
+            {TONES.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => selectTone(t)}
+                style={optionCard}
+              >
+                <span style={{ fontSize: 28 }}>{t.emoji}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "white" }}>
+                  {t.label}
+                </span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
       {/* ── INPUT ── */}
       {step === "input" && situation && (
         <>
-          <button
-            onClick={() => setStep("pick")}
-            style={{
-              background: "transparent",
-              border: "none",
-              color: C.muted,
-              fontSize: 13,
-              cursor: "pointer",
-              fontFamily: "inherit",
-              padding: 0,
-              textAlign: "left",
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-            }}
-          >
+          <button onClick={() => setStep("tone")} style={backBtn}>
             ← Back
           </button>
 
@@ -276,21 +348,46 @@ export default function Connect({ user, go }) {
             <div style={{ fontSize: 32, marginBottom: 8 }}>
               {situation.emoji}
             </div>
-            <h2
-              style={{
-                fontSize: 22,
-                fontWeight: 900,
-                color: "white",
-                margin: 0,
-              }}
-            >
-              {situation.title}
-            </h2>
-            <p style={{ fontSize: 13, color: C.sub, margin: "6px 0 0" }}>
+            <h2 style={pageTitle}>{situation.title}</h2>
+            <p style={pageSub}>
               {situation.id === "reply_story"
-                ? "Upload a screenshot of their story for a tailored reply"
+                ? "Upload a screenshot for a tailored reply"
                 : "Add a quick detail for a more personal message"}
             </p>
+          </div>
+
+          {/* Selected audience/tone chips */}
+          <div style={{ display: "flex", gap: 8 }}>
+            <div
+              style={{
+                background: C.glass,
+                border: `1px solid ${C.glassBdr}`,
+                borderRadius: 99,
+                padding: "6px 12px",
+                fontSize: 12,
+                color: "white",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <span>{audience?.emoji}</span> {audience?.label}
+            </div>
+            <div
+              style={{
+                background: C.glass,
+                border: `1px solid ${C.glassBdr}`,
+                borderRadius: 99,
+                padding: "6px 12px",
+                fontSize: 12,
+                color: "white",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <span>{tone?.emoji}</span> {tone?.label}
+            </div>
           </div>
 
           {situation.id === "reply_story" && (
@@ -425,22 +522,7 @@ export default function Connect({ user, go }) {
       {/* ── RESULT ── */}
       {step === "result" && (
         <>
-          <button
-            onClick={() => setStep("input")}
-            style={{
-              background: "transparent",
-              border: "none",
-              color: C.muted,
-              fontSize: 13,
-              cursor: "pointer",
-              fontFamily: "inherit",
-              padding: 0,
-              textAlign: "left",
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-            }}
-          >
+          <button onClick={() => setStep("input")} style={backBtn}>
             ← Back
           </button>
 
@@ -562,6 +644,95 @@ export default function Connect({ user, go }) {
           )}
         </>
       )}
+
+      {/* ── HISTORY ── */}
+      {step === "history" && (
+        <>
+          <button onClick={() => setStep("pick")} style={backBtn}>
+            ← Back
+          </button>
+          <h2 style={pageTitle}>Recent Messages</h2>
+
+          {getConnectHistory().length === 0 ? (
+            <div style={{ textAlign: "center", padding: "60px 20px" }}>
+              <div style={{ fontSize: 48, marginBottom: 12 }}>💬</div>
+              <div style={{ fontSize: 14, color: C.muted }}>
+                No messages generated yet
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {getConnectHistory().map((item) => (
+                <div
+                  key={item.id}
+                  style={{
+                    background: C.glass,
+                    border: `1px solid ${C.glassBdr}`,
+                    borderRadius: 16,
+                    padding: "14px 16px",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      marginBottom: 8,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <span style={{ fontSize: 16 }}>
+                        {item.situationEmoji}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 700,
+                          color: C.muted,
+                          letterSpacing: "0.06em",
+                        }}
+                      >
+                        {item.situationTitle.toUpperCase()}
+                      </span>
+                      {item.audience && (
+                        <span style={{ fontSize: 10, color: C.gold }}>
+                          · {item.audience}
+                        </span>
+                      )}
+                      {item.tone && (
+                        <span style={{ fontSize: 10, color: C.teal }}>
+                          · {item.tone}
+                        </span>
+                      )}
+                    </div>
+                    <span style={{ fontSize: 10, color: C.muted }}>
+                      {timeAgo(item.timestamp)}
+                    </span>
+                  </div>
+                  <p
+                    style={{
+                      fontSize: 13,
+                      color: "white",
+                      margin: 0,
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    "{item.message}"
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
       {/* ── LIMIT REACHED ── */}
       {step === "limit" && (
         <div style={{ textAlign: "center", padding: "40px 16px" }}>
@@ -585,7 +756,7 @@ export default function Connect({ user, go }) {
             }}
           >
             You've used your {FREE_DAILY_CONNECT_LIMIT} free messages today.
-            Upgrade to Pro for unlimited access, or come back tomorrow!
+            Upgrade for unlimited access, or come back tomorrow!
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <button
@@ -624,99 +795,6 @@ export default function Connect({ user, go }) {
             </button>
           </div>
         </div>
-      )}
-
-      {/* ── HISTORY ── */}
-      {step === "history" && (
-        <>
-          <button
-            onClick={() => setStep("pick")}
-            style={{
-              background: "transparent",
-              border: "none",
-              color: C.muted,
-              fontSize: 13,
-              cursor: "pointer",
-              fontFamily: "inherit",
-              padding: 0,
-              textAlign: "left",
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-            }}
-          >
-            ← Back
-          </button>
-
-          <h2
-            style={{ fontSize: 22, fontWeight: 900, color: "white", margin: 0 }}
-          >
-            Recent Messages
-          </h2>
-
-          {getConnectHistory().length === 0 ? (
-            <div style={{ textAlign: "center", padding: "60px 20px" }}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>💬</div>
-              <div style={{ fontSize: 14, color: C.muted }}>
-                No messages generated yet
-              </div>
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {getConnectHistory().map((item) => (
-                <div
-                  key={item.id}
-                  style={{
-                    background: C.glass,
-                    border: `1px solid ${C.glassBdr}`,
-                    borderRadius: 16,
-                    padding: "14px 16px",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      marginBottom: 8,
-                    }}
-                  >
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 8 }}
-                    >
-                      <span style={{ fontSize: 16 }}>
-                        {item.situationEmoji}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: 11,
-                          fontWeight: 700,
-                          color: C.muted,
-                          letterSpacing: "0.06em",
-                        }}
-                      >
-                        {item.situationTitle.toUpperCase()}
-                      </span>
-                    </div>
-                    <span style={{ fontSize: 10, color: C.muted }}>
-                      {timeAgo(item.timestamp)}
-                    </span>
-                  </div>
-                  <p
-                    style={{
-                      fontSize: 13,
-                      color: "white",
-                      margin: 0,
-                      lineHeight: 1.5,
-                    }}
-                  >
-                    "{item.message}"
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </>
       )}
     </div>
   );

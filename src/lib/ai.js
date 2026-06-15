@@ -1,9 +1,9 @@
-export async function generateMessage(situationId, context, image) {
+export async function generateMessage(situationId, context, image, audience, tone) {
   try {
     const response = await fetch('/api/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ situationId, context, image }),
+      body: JSON.stringify({ situationId, context, image, audience, tone }),
     });
 
     if (!response.ok) throw new Error('API failed');

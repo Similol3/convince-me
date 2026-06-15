@@ -1,24 +1,49 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { toBlob } from 'html-to-image';
 import { C, gr } from '../tokens';
 
 export default function Share({ optA, go }) {
   const winner = optA || 'Pizza Night';
-  const [shared, setShared] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+  const cardRef = useRef(null);
 
-  async function handleShare() {
-    const text = `${winner.toUpperCase()} wins! "Because salad is just a cry for help, and we deserve a cheesy hug." — decided by Convince Me 🎲`;
+  async function handleShareImage() {
+    if (!cardRef.current) return;
+    setBusy(true);
 
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: 'Convince Me', text, url: window.location.origin });
-      } catch (e) {
-        // user cancelled — do nothing
+    try {
+      const blob = await toBlob(cardRef.current, { quality: 0.95, pixelRatio: 2 });
+      if (!blob) throw new Error('blob failed');
+      const file = new File([blob], 'convince-me.png', { type: 'image/png' });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'Convince Me',
+          text: `${winner.toUpperCase()} wins! Decided by Convince Me 🎲`,
+        });
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'convince-me.png';
+        a.click();
+        URL.revokeObjectURL(url);
+        setDone(true);
+        setTimeout(() => setDone(false), 1500);
       }
-    } else {
-      navigator.clipboard.writeText(`${text} ${window.location.origin}`);
-      setShared(true);
-      setTimeout(() => setShared(false), 1500);
+    } catch (e) {
+      console.error('Share error:', e);
     }
+    setBusy(false);
+  }
+
+  function handleCopyCaption() {
+    const text = `${winner.toUpperCase()} wins! "Because salad is just a cry for help, and we deserve a cheesy hug." — decided by Convince Me 🎲`;
+    navigator.clipboard.writeText(text);
+    setDone(true);
+    setTimeout(() => setDone(false), 1500);
   }
 
   return (
@@ -31,11 +56,10 @@ export default function Share({ optA, go }) {
         Share Your Result
       </h2>
 
-      {/* Shareable card */}
-      <div style={{
+      {/* Shareable card — captured as image */}
+      <div ref={cardRef} style={{
         borderRadius: 28, padding: '28px 24px', textAlign: 'center',
         background: gr(145), boxShadow: '0 24px 60px rgba(139,92,246,0.4)',
-        animation: 'slideUp 0.4s ease',
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <div style={{ textAlign: 'left' }}>
@@ -72,58 +96,34 @@ export default function Share({ optA, go }) {
         </div>
       </div>
 
-      {/* Social icons */}
-      <div style={{ display: 'flex', justifyContent: 'space-around', padding: '4px 0' }}>
-        {[
-          { e: '📸', l: 'Instagram' },
-          { e: '💬', l: 'WhatsApp'  },
-          { e: '🔗', l: 'Copy Link' },
-          { e: '···', l: 'More'     },
-        ].map(s => (
-          <div key={s.l} style={{ textAlign: 'center', cursor: 'pointer' }}>
-            <div style={{
-              width: 48, height: 48, borderRadius: '50%', background: C.glass,
-              border: `1px solid ${C.glassBdr}`, display: 'flex',
-              alignItems: 'center', justifyContent: 'center', fontSize: 18, marginBottom: 5,
-            }}>{s.e}</div>
-            <div style={{ fontSize: 9, color: C.muted }}>{s.l}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Native share button */}
-      <button onClick={handleShare} style={{
+      {/* Primary: image share */}
+      <button onClick={handleShareImage} disabled={busy} style={{
         background: gr(), border: 'none', borderRadius: 14,
         padding: '16px', color: 'white', fontSize: 15,
-        fontWeight: 700, cursor: 'pointer', width: '100%', fontFamily: 'inherit',
+        fontWeight: 700, cursor: 'pointer', width: '100%',
+        fontFamily: 'inherit', opacity: busy ? 0.6 : 1,
       }}>
-        {shared ? '✓ Copied to clipboard!' : 'SHARE NOW 🔗'}
+        {busy ? 'Preparing image...' : done ? '✓ Saved!' : '📸 Share as Image'}
+      </button>
+
+      {/* Secondary: text caption */}
+      <button onClick={handleCopyCaption} style={{
+        background: C.glass, border: `1px solid ${C.glassBdr}`,
+        borderRadius: 14, padding: '16px', color: 'white',
+        fontSize: 15, fontWeight: 700, cursor: 'pointer',
+        width: '100%', fontFamily: 'inherit',
+      }}>
+        📋 Copy Caption
       </button>
 
       <button onClick={() => go(0)} style={{
-        background: C.glass, border: `1px solid ${C.glassBdr}`,
+        background: 'transparent', border: `1px solid ${C.glassBdr}`,
         borderRadius: 14, padding: '16px', color: 'white',
         fontSize: 15, fontWeight: 700, cursor: 'pointer',
         width: '100%', fontFamily: 'inherit',
       }}>
         DECIDE AGAIN 🔄
       </button>
-
-      {/* Social proof */}
-      <div style={{ display: 'flex', gap: 8 }}>
-        {[
-          { e: '⚡', l: 'INSTANT DECISION' },
-          { e: '🔥', l: '98% SATISFACTION' },
-        ].map(b => (
-          <div key={b.l} style={{
-            flex: 1, background: C.glass, border: `1px solid ${C.glassBdr}`,
-            borderRadius: 99, padding: '7px 12px', display: 'flex', alignItems: 'center', gap: 5,
-          }}>
-            <span style={{ fontSize: 12 }}>{b.e}</span>
-            <span style={{ fontSize: 10, fontWeight: 700, color: C.sub, letterSpacing: '0.04em' }}>{b.l}</span>
-          </div>
-        ))}
-      </div>
 
     </div>
   );
