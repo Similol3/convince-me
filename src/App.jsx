@@ -19,6 +19,7 @@ import Profile from './screens/Profile';
 import Connect from './screens/Connect';
 import Upgrade from './screens/Upgrade';
 import Leaderboard from './screens/Leaderboard';
+import { Analytics } from '@vercel/analytics/next';
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -207,6 +208,7 @@ export default function App() {
         </div>
 
         <BottomNav active={navActive} setActive={handleNav} />
+        <Analytics/>
       </div>
     </div>
   );
