@@ -63,28 +63,6 @@ export default function App() {
     });
   }, [session]);
 
-  // ── Status bar clock + battery ──────────────────────────
-  useEffect(() => {
-    const clockInterval = setInterval(() => setTime(new Date()), 1000);
-    if (navigator.getBattery) {
-      navigator.getBattery().then((bat) => {
-        setBattery(Math.round(bat.level * 100));
-        bat.addEventListener("levelchange", () =>
-          setBattery(Math.round(bat.level * 100))
-        );
-      });
-    }
-    return () => clearInterval(clockInterval);
-  }, []);
-
-  function formatTime(date) {
-    let hours = date.getHours();
-    const minutes = date.getMinutes().toString().padStart(2, "0");
-    const ampm = hours >= 12 ? "PM" : "AM";
-    hours = hours % 12 || 12;
-    return `${hours}:${minutes} ${ampm}`;
-  }
-
   const go = (n, a, b, ans, cat) => {
     if (a !== undefined) setOptA(a);
     if (b !== undefined) setOptB(b);
