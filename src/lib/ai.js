@@ -1,9 +1,9 @@
-export async function generateMessage(situationId, context, image, audience, tone) {
+export async function generateMessage(situationId, context, image, audience, tone, purpose) {
   try {
     const response = await fetch('/api/generate', {
-      method: 'POST',
+      method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ situationId, context, image, audience, tone }),
+      body:    JSON.stringify({ situationId, context, image, audience, tone, purpose }),
     });
 
     if (!response.ok) throw new Error('API failed');
@@ -19,16 +19,16 @@ export async function generateMessage(situationId, context, image, audience, ton
 
 const FALLBACKS = {
   reply_story: [
-    "This looks amazing! Where was this? 👀",
-    "Okay this is so cool, tell me more!",
+    "This looks so good! What's the story behind it? 👀",
+    "Okay I need details on this immediately 😭",
   ],
   start_chat: [
     "Hey! How's your day going so far?",
-    "Hi! Just wanted to say hey 👋",
+    "Hi! Just wanted to reach out 👋",
   ],
   reply_text: [
-    "I hear you — that sounds tough. You okay?",
-    "That's a lot to deal with. I'm here if you want to talk.",
+    "That sounds tough — you good?",
+    "I hear you. Want to talk about it?",
   ],
 };
 

@@ -6,6 +6,7 @@ export default function Options({ go, category }) {
   const [optA, setOptA] = useState('');
   const [optB, setOptB] = useState('');
   const [error, setError] = useState('');
+  const [errorField, setErrorField] = useState('');
 
   const cat = CATEGORIES[category] || CATEGORIES.general;
 
@@ -15,14 +16,53 @@ export default function Options({ go, category }) {
     fontFamily: 'inherit', padding: 0,
   };
 
+  function validate(val, field) {
+    if (!val.trim()) {
+      setError(`Please enter ${field === 'a' ? 'Option A' : 'Option B'}`);
+      setErrorField(field);
+      return false;
+    }
+
+    if (category !== 'general' && !cat.validateInput(val)) {
+      const categoryName = cat.label;
+      const hint = cat.inputHint;
+      setError(`This looks like it might not be a ${categoryName} option. ${hint}`);
+      setErrorField(field);
+      return false;
+    }
+
+    return true;
+  }
+
   function handleContinue() {
-    if (!optA.trim() || !optB.trim()) {
-      setError('Please fill in both options to continue');
+    setError('');
+    setErrorField('');
+
+    if (!validate(optA, 'a')) return;
+    if (!validate(optB, 'b')) return;
+
+    if (optA.trim().toLowerCase() === optB.trim().toLowerCase()) {
+      setError("Both options are the same — enter two different things!");
+      setErrorField('both');
       return;
     }
-    setError('');
+
     go(2, optA.trim(), optB.trim());
   }
+
+  const getCardBorder = (field) => {
+    if (errorField === field || errorField === 'both') {
+      return '1px solid rgba(239,68,68,0.5)';
+    }
+    return `1px solid ${C.glassBdr}`;
+  };
+
+  const getCardBg = (field, val) => {
+    if (errorField === field || errorField === 'both') {
+      return 'rgba(239,68,68,0.06)';
+    }
+    return C.glass;
+  };
 
   return (
     <div style={{
@@ -32,31 +72,35 @@ export default function Options({ go, category }) {
     }}>
 
       <div>
-        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', color: C.muted, margin: '0 0 6px' }}>
+        <p style={{
+          fontSize: 11, fontWeight: 700, letterSpacing: '0.12em',
+          color: C.muted, margin: '0 0 6px',
+        }}>
           {cat.emoji} {cat.label.toUpperCase()} · DECIDE IN 30s
         </p>
         <h1 style={{ fontSize: 26, fontWeight: 900, color: C.text, margin: 0, lineHeight: 1.2 }}>
           What's the dilemma?
         </h1>
-        <p style={{ fontSize: 14, color: C.sub, margin: '4px 0 0' }}>
-          Enter two options below
+        <p style={{ fontSize: 13, color: C.sub, margin: '4px 0 0' }}>
+          {cat.inputHint}
         </p>
       </div>
 
       {/* Option A */}
       <div style={{
-        background: error && !optA.trim() ? 'rgba(239,68,68,0.06)' : C.glass,
-        border: `1px solid ${error && !optA.trim() ? 'rgba(239,68,68,0.4)' : C.glassBdr}`,
+        background: getCardBg('a', optA),
+        border: getCardBorder('a'),
         borderRadius: 16, padding: '16px', transition: 'all 0.2s',
       }}>
-        <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: C.muted, margin: '0 0 10px' }}>
-          OPTION A
-        </p>
+        <p style={{
+          fontSize: 10, fontWeight: 700, letterSpacing: '0.1em',
+          color: C.muted, margin: '0 0 10px',
+        }}>OPTION A</p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: 28 }}>{cat.emoji}</span>
           <input
             value={optA}
-            onChange={e => { setOptA(e.target.value); setError(''); }}
+            onChange={e => { setOptA(e.target.value); setError(''); setErrorField(''); }}
             placeholder={cat.placeholderA}
             style={inputStyle}
           />
@@ -77,18 +121,19 @@ export default function Options({ go, category }) {
 
       {/* Option B */}
       <div style={{
-        background: error && !optB.trim() ? 'rgba(239,68,68,0.06)' : C.glass,
-        border: `1px solid ${error && !optB.trim() ? 'rgba(239,68,68,0.4)' : C.glassBdr}`,
+        background: getCardBg('b', optB),
+        border: getCardBorder('b'),
         borderRadius: 16, padding: '16px', transition: 'all 0.2s',
       }}>
-        <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: C.muted, margin: '0 0 10px' }}>
-          OPTION B
-        </p>
+        <p style={{
+          fontSize: 10, fontWeight: 700, letterSpacing: '0.1em',
+          color: C.muted, margin: '0 0 10px',
+        }}>OPTION B</p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: 28 }}>{cat.emoji}</span>
           <input
             value={optB}
-            onChange={e => { setOptB(e.target.value); setError(''); }}
+            onChange={e => { setOptB(e.target.value); setError(''); setErrorField(''); }}
             placeholder={cat.placeholderB}
             style={inputStyle}
           />
@@ -99,25 +144,23 @@ export default function Options({ go, category }) {
       {error && (
         <div style={{
           background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
-          borderRadius: 12, padding: '10px 14px',
-          display: 'flex', alignItems: 'center', gap: 8,
+          borderRadius: 12, padding: '12px 14px',
+          display: 'flex', alignItems: 'flex-start', gap: 8,
         }}>
-          <span style={{ fontSize: 14 }}>⚠️</span>
-          <span style={{ fontSize: 12, color: '#FCA5A5', fontWeight: 600 }}>
+          <span style={{ fontSize: 16, flexShrink: 0 }}>⚠️</span>
+          <span style={{ fontSize: 13, color: '#FCA5A5', fontWeight: 600, lineHeight: 1.4 }}>
             {error}
           </span>
         </div>
       )}
 
       <div style={{ marginTop: 'auto' }}>
-        <button
-          onClick={handleContinue}
-          style={{
-            background: gr(), border: 'none', borderRadius: 14,
-            padding: '17px', color: 'white', fontSize: 15,
-            fontWeight: 700, cursor: 'pointer', width: '100%',
-            letterSpacing: '0.03em', fontFamily: 'inherit',
-          }}>
+        <button onClick={handleContinue} style={{
+          background: gr(), border: 'none', borderRadius: 14,
+          padding: '17px', color: 'white', fontSize: 15,
+          fontWeight: 700, cursor: 'pointer', width: '100%',
+          letterSpacing: '0.03em', fontFamily: 'inherit',
+        }}>
           CONTINUE →
         </button>
       </div>

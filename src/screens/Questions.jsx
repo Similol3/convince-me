@@ -3,7 +3,9 @@ import { C, gr } from '../tokens';
 import { CATEGORIES } from '../data/questions';
 
 export default function Questions({ go, category }) {
-  const QUESTIONS = (CATEGORIES[category] || CATEGORIES.general).questions;
+  const cat = CATEGORIES[category] || CATEGORIES.general;
+  const QUESTIONS = cat.questions;
+  const TOTAL = QUESTIONS.length;
 
   const [step,       setStep]       = useState(0);
   const [sel,        setSel]        = useState(null);
@@ -11,7 +13,7 @@ export default function Questions({ go, category }) {
   const [allAnswers, setAllAnswers] = useState([]);
 
   const q   = QUESTIONS[step];
-  const pct = ((step / 3) * 100) + 33;
+  const pct = Math.round(((step + 1) / TOTAL) * 100);
 
   function pick(i) {
     setSel(i);
@@ -19,7 +21,7 @@ export default function Questions({ go, category }) {
     setAllAnswers(newAnswers);
 
     setTimeout(() => {
-      if (step < 2) {
+      if (step < TOTAL - 1) {
         setStep(s => s + 1);
         setSel(null);
         setAnimKey(k => k + 1);
@@ -38,25 +40,45 @@ export default function Questions({ go, category }) {
 
       {/* Progress bar */}
       <div>
-        <div style={{ height: 6, background: C.glass, borderRadius: 3, overflow: 'hidden', marginBottom: 8 }}>
+        <div style={{
+          height: 6, background: C.glass, borderRadius: 3,
+          overflow: 'hidden', marginBottom: 8,
+        }}>
           <div style={{
-            height: '100%', width: `${pct}%`, background: gr(),
-            borderRadius: 3, transition: 'width 0.4s ease',
+            height: '100%', width: `${pct}%`,
+            background: gr(), borderRadius: 3, transition: 'width 0.4s ease',
           }} />
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: C.muted }}>
-            STEP {step + 1} OF 3
+          <span style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: C.muted,
+          }}>
+            QUESTION {step + 1} OF {TOTAL}
           </span>
           <span style={{ fontSize: 10, fontWeight: 700, color: C.grape }}>
-            {Math.round(pct)}% COMPLETE
+            {pct}% COMPLETE
           </span>
         </div>
       </div>
 
+      {/* Category badge */}
+      <div style={{
+        display: 'inline-flex', alignItems: 'center', gap: 6,
+        background: C.glass, border: `1px solid ${C.glassBdr}`,
+        borderRadius: 99, padding: '4px 12px', alignSelf: 'flex-start',
+      }}>
+        <span style={{ fontSize: 14 }}>{cat.emoji}</span>
+        <span style={{ fontSize: 11, fontWeight: 700, color: C.sub, letterSpacing: '0.06em' }}>
+          {cat.label.toUpperCase()}
+        </span>
+      </div>
+
       {/* Question */}
       <div key={animKey} style={{ animation: 'slideUp 0.3s ease' }}>
-        <h2 style={{ fontSize: 26, fontWeight: 900, color: C.text, margin: '0 0 22px', lineHeight: 1.2 }}>
+        <h2 style={{
+          fontSize: 24, fontWeight: 900, color: C.text,
+          margin: '0 0 20px', lineHeight: 1.2,
+        }}>
           {q.q}
         </h2>
 
@@ -71,7 +93,9 @@ export default function Questions({ go, category }) {
               transition: 'all 0.15s ease', fontFamily: 'inherit',
             }}>
               <span style={{ fontSize: 28 }}>{opt.e}</span>
-              <span style={{ fontSize: 14, fontWeight: 700, color: 'white' }}>{opt.l}</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: 'white', textAlign: 'center' }}>
+                {opt.l}
+              </span>
             </button>
           ))}
         </div>
