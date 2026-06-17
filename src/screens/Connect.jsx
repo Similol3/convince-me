@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { C, gr } from '../tokens';
 import { generateMessage } from '../lib/ai';
 import { addConnectHistory, getConnectHistory } from '../lib/storage';
-import { AUDIENCES, TONES, PURPOSES } from '../data/connectOptions';
+import { AUDIENCES, TONES, PURPOSES } from '../data/ConnectOptions';
 import { FREE_DAILY_CONNECT_LIMIT } from '../data/pricing';
 
 const SITUATIONS = [
