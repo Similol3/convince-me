@@ -1,99 +1,121 @@
-import { useState } from 'react';
-import { C, gr } from '../tokens';
-import { generateMessage } from '../lib/ai';
-import { addConnectHistory, getConnectHistory } from '../lib/storage';
-import { AUDIENCES, TONES, PURPOSES } from '../data/ConnectOptions';
-import { FREE_DAILY_CONNECT_LIMIT } from '../data/pricing';
+import { useState } from "react";
+import { C, gr } from "../tokens";
+import { generateMessage } from "../lib/ai";
+import { addConnectHistory, getConnectHistory } from "../lib/storage";
+import { AUDIENCES, TONES, PURPOSES } from "../data/ConnectOptions";
+import { FREE_DAILY_CONNECT_LIMIT } from "../data/pricing";
 
 const SITUATIONS = [
   {
-    id:   'reply_story',
-    emoji: '📸',
-    title: 'Reply to their story',
-    desc:  'Get the perfect reply to their post',
+    id: "reply_story",
+    emoji: "📸",
+    title: "Reply to their story",
+    desc: "Get the perfect reply to their post",
   },
   {
-    id:   'start_chat',
-    emoji: '💬',
-    title: 'Start a conversation',
-    desc:  'Break the ice — first message sorted',
+    id: "start_chat",
+    emoji: "💬",
+    title: "Start a conversation",
+    desc: "Break the ice — first message sorted",
   },
   {
-    id:   'reply_text',
-    emoji: '💭',
-    title: 'Reply to their message',
-    desc:  'Get the right words for exactly what they said',
+    id: "reply_text",
+    emoji: "💭",
+    title: "Reply to their message",
+    desc: "Get the right words for exactly what they said",
   },
 ];
 
 const back = {
-  background: 'transparent', border: 'none',
-  color: C.muted, fontSize: 13, cursor: 'pointer',
-  fontFamily: 'inherit', padding: 0,
-  display: 'flex', alignItems: 'center', gap: 6,
+  background: "transparent",
+  border: "none",
+  color: C.muted,
+  fontSize: 13,
+  cursor: "pointer",
+  fontFamily: "inherit",
+  padding: 0,
+  display: "flex",
+  alignItems: "center",
+  gap: 6,
 };
 
 const pill = (color = C.glass) => ({
   background: color,
   border: `1px solid ${C.glassBdr}`,
-  borderRadius: 99, padding: '5px 10px',
-  fontSize: 11, color: 'white',
-  display: 'flex', alignItems: 'center', gap: 4,
+  borderRadius: 99,
+  padding: "5px 10px",
+  fontSize: 11,
+  color: "white",
+  display: "flex",
+  alignItems: "center",
+  gap: 4,
 });
 
 const textArea = {
-  width: '100%', background: 'transparent', border: 'none',
-  color: '#fff', fontSize: 14, fontWeight: 500,
-  outline: 'none', fontFamily: 'inherit', resize: 'none',
+  width: "100%",
+  background: "transparent",
+  border: "none",
+  color: "#fff",
+  fontSize: 14,
+  fontWeight: 500,
+  outline: "none",
+  fontFamily: "inherit",
+  resize: "none",
 };
 
 const inputBox = {
-  width: '100%', background: 'rgba(255,255,255,0.08)',
-  border: `1px solid ${C.glassBdr}`, borderRadius: 12,
-  padding: '12px 14px', color: '#fff', fontSize: 14,
-  fontWeight: 600, outline: 'none', fontFamily: 'inherit',
-  boxSizing: 'border-box',
+  width: "100%",
+  background: "rgba(255,255,255,0.08)",
+  border: `1px solid ${C.glassBdr}`,
+  borderRadius: 12,
+  padding: "12px 14px",
+  color: "#fff",
+  fontSize: 14,
+  fontWeight: 600,
+  outline: "none",
+  fontFamily: "inherit",
+  boxSizing: "border-box",
 };
 
 export default function Connect({ user, go }) {
   // Steps: pick → about → vibe → context → result | history | limit
-  const [step,      setStep]      = useState('pick');
+  const [step, setStep] = useState("pick");
   const [situation, setSituation] = useState(null);
-  const [audience,  setAudience]  = useState(null);
-  const [tone,      setTone]      = useState(null);
-  const [purpose,   setPurpose]   = useState(null);
+  const [audience, setAudience] = useState(null);
+  const [tone, setTone] = useState(null);
+  const [purpose, setPurpose] = useState(null);
 
   // About the person
-  const [personName,   setPersonName]   = useState('');
-  const [personHandle, setPersonHandle] = useState('');
+  const [personName, setPersonName] = useState("");
+  const [personHandle, setPersonHandle] = useState("");
 
   // Context fields
-  const [context,      setContext]      = useState('');
-  const [pastMessages, setPastMessages] = useState('');
-  const [image,        setImage]        = useState(null);
+  const [context, setContext] = useState("");
+  const [pastMessages, setPastMessages] = useState("");
+  const [image, setImage] = useState(null);
 
-  const [picked,  setPicked]  = useState(null);
-  const [copied,  setCopied]  = useState(false);
+  const [picked, setPicked] = useState(null);
+  const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const isPro = user?.is_pro || false;
 
   function getTodayCount() {
-    const today  = new Date().toISOString().split('T')[0];
-    const stored = JSON.parse(localStorage.getItem('cm_connect_count') || '{}');
+    const today = new Date().toISOString().split("T")[0];
+    const stored = JSON.parse(localStorage.getItem("cm_connect_count") || "{}");
     return stored.date === today ? stored.count : 0;
   }
 
   function incrementTodayCount() {
-    const today   = new Date().toISOString().split('T')[0];
+    const today = new Date().toISOString().split("T")[0];
     const current = getTodayCount();
     localStorage.setItem(
-      'cm_connect_count',
+      "cm_connect_count",
       JSON.stringify({ date: today, count: current + 1 })
     );
   }
 
-  const todayCount   = getTodayCount();
+  const todayCount = getTodayCount();
   const limitReached = !isPro && todayCount >= FREE_DAILY_CONNECT_LIMIT;
 
   function handleImageUpload(e) {
@@ -105,19 +127,22 @@ export default function Connect({ user, go }) {
   }
 
   async function generate() {
-    if (limitReached) { setStep('limit'); return; }
+    if (limitReached) {
+      setStep("limit");
+      return;
+    }
 
     setLoading(true);
-    setStep('result');
+    setStep("result");
 
     const text = await generateMessage({
-      situationId:  situation.id,
+      situationId: situation.id,
       context,
       image,
-      audience:     audience?.id,
-      tone:         tone?.id,
-      purpose:      purpose?.id,
-      personName:   personName.trim(),
+      audience: audience?.id,
+      tone: tone?.id,
+      purpose: purpose?.id,
+      personName: personName.trim(),
       personHandle: personHandle.trim(),
       pastMessages: pastMessages.trim(),
     });
@@ -125,13 +150,13 @@ export default function Connect({ user, go }) {
     setPicked(text);
 
     addConnectHistory({
-      situationId:    situation.id,
+      situationId: situation.id,
       situationEmoji: situation.emoji,
       situationTitle: situation.title,
-      personName:     personName.trim(),
-      audience:       audience?.label,
-      tone:           tone?.label,
-      purpose:        purpose?.label,
+      personName: personName.trim(),
+      audience: audience?.label,
+      tone: tone?.label,
+      purpose: purpose?.label,
       context,
       message: text,
     });
@@ -147,39 +172,63 @@ export default function Connect({ user, go }) {
   }
 
   function reset() {
-    setStep('pick');
-    setSituation(null); setAudience(null);
-    setTone(null); setPurpose(null);
-    setPersonName(''); setPersonHandle('');
-    setContext(''); setPastMessages('');
-    setImage(null); setPicked(null); setCopied(false);
+    setStep("pick");
+    setSituation(null);
+    setAudience(null);
+    setTone(null);
+    setPurpose(null);
+    setPersonName("");
+    setPersonHandle("");
+    setContext("");
+    setPastMessages("");
+    setImage(null);
+    setPicked(null);
+    setCopied(false);
   }
 
   function timeAgo(iso) {
     const diff = Date.now() - new Date(iso).getTime();
     const mins = Math.floor(diff / 60000);
-    const hrs  = Math.floor(mins / 60);
+    const hrs = Math.floor(mins / 60);
     const days = Math.floor(hrs / 24);
     if (days > 0) return `${days}d ago`;
-    if (hrs  > 0) return `${hrs}h ago`;
+    if (hrs > 0) return `${hrs}h ago`;
     if (mins > 0) return `${mins}m ago`;
-    return 'just now';
+    return "just now";
   }
 
   // Grid of selectable option cards
   function OptionGrid({ items, onSelect }) {
     return (
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
         {items.map((item, i) => (
-          <button key={i} onClick={() => onSelect(item)} style={{
-            background: C.glass, border: `1px solid ${C.glassBdr}`,
-            borderRadius: 14, padding: '16px 10px', cursor: 'pointer',
-            display: 'flex', flexDirection: 'column', alignItems: 'center',
-            gap: 8, fontFamily: 'inherit', textAlign: 'center',
-            transition: 'all 0.15s ease',
-          }}>
+          <button
+            key={i}
+            onClick={() => onSelect(item)}
+            style={{
+              background: C.glass,
+              border: `1px solid ${C.glassBdr}`,
+              borderRadius: 14,
+              padding: "16px 10px",
+              cursor: "pointer",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 8,
+              fontFamily: "inherit",
+              textAlign: "center",
+              transition: "all 0.15s ease",
+            }}
+          >
             <span style={{ fontSize: 24 }}>{item.emoji}</span>
-            <span style={{ fontSize: 12, fontWeight: 700, color: 'white', lineHeight: 1.3 }}>
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 700,
+                color: "white",
+                lineHeight: 1.3,
+              }}
+            >
               {item.label}
             </span>
           </button>
@@ -192,16 +241,16 @@ export default function Connect({ user, go }) {
   function Chips() {
     const chips = [
       situation && { emoji: situation.emoji, label: situation.title },
-      audience  && { emoji: audience.emoji,  label: audience.label  },
-      tone      && { emoji: tone.emoji,      label: tone.label      },
-      purpose   && { emoji: purpose.emoji,   label: purpose.label   },
-      personName.trim() && { emoji: '👤', label: personName.trim() },
+      audience && { emoji: audience.emoji, label: audience.label },
+      tone && { emoji: tone.emoji, label: tone.label },
+      purpose && { emoji: purpose.emoji, label: purpose.label },
+      personName.trim() && { emoji: "👤", label: personName.trim() },
     ].filter(Boolean);
 
     if (chips.length === 0) return null;
 
     return (
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         {chips.map((c, i) => (
           <div key={i} style={pill()}>
             <span>{c.emoji}</span> {c.label}
@@ -212,69 +261,121 @@ export default function Connect({ user, go }) {
   }
 
   const wrapper = {
-    padding: '24px 16px', display: 'flex', flexDirection: 'column',
-    gap: 20, minHeight: '100%',
+    padding: "24px 16px",
+    display: "flex",
+    flexDirection: "column",
+    gap: 20,
+    minHeight: "100%",
     background: `radial-gradient(ellipse 90% 50% at 50% 0%, rgba(6,182,212,0.18) 0%, ${C.bg} 60%)`,
   };
 
   return (
     <div style={wrapper}>
-
       {/* ── PICK SITUATION ── */}
-      {step === 'pick' && (
+      {step === "pick" && (
         <>
           <div>
-            <h1 style={{ fontSize: 26, fontWeight: 900, color: 'white', margin: 0 }}>
+            <h1
+              style={{
+                fontSize: 26,
+                fontWeight: 900,
+                color: "white",
+                margin: 0,
+              }}
+            >
               Need something to say?
             </h1>
-            <p style={{ fontSize: 13, color: C.sub, margin: '6px 0 0', lineHeight: 1.5 }}>
+            <p
+              style={{
+                fontSize: 13,
+                color: C.sub,
+                margin: "6px 0 0",
+                lineHeight: 1.5,
+              }}
+            >
               Answer a few quick questions — we'll write the perfect message.
             </p>
           </div>
 
           {!isPro && (
-            <div style={{
-              background: 'rgba(6,182,212,0.08)',
-              border: '1px solid rgba(6,182,212,0.2)',
-              borderRadius: 12, padding: '10px 14px',
-            }}>
+            <div
+              style={{
+                background: "rgba(6,182,212,0.08)",
+                border: "1px solid rgba(6,182,212,0.2)",
+                borderRadius: 12,
+                padding: "10px 14px",
+              }}
+            >
               <span style={{ fontSize: 12, color: C.sub }}>
                 {FREE_DAILY_CONNECT_LIMIT - todayCount} free messages left today
               </span>
             </div>
           )}
 
-          <button onClick={() => setStep('history')} style={{
-            background: C.glass, border: `1px solid ${C.glassBdr}`,
-            borderRadius: 14, padding: '12px 16px', cursor: 'pointer',
-            width: '100%', fontFamily: 'inherit',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button
+            onClick={() => setStep("history")}
+            style={{
+              background: C.glass,
+              border: `1px solid ${C.glassBdr}`,
+              borderRadius: 14,
+              padding: "12px 16px",
+              cursor: "pointer",
+              width: "100%",
+              fontFamily: "inherit",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ fontSize: 16 }}>🕓</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: 'white' }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "white" }}>
                 Recent messages
               </span>
             </div>
             <span style={{ color: C.muted, fontSize: 16 }}>›</span>
           </button>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {SITUATIONS.map(sit => (
-              <button key={sit.id} onClick={() => { setSituation(sit); setStep('about'); }} style={{
-                background: C.glass, border: `1px solid ${C.glassBdr}`,
-                borderRadius: 18, padding: '18px', display: 'flex',
-                alignItems: 'center', gap: 14, cursor: 'pointer',
-                fontFamily: 'inherit', textAlign: 'left',
-              }}>
-                <div style={{
-                  width: 48, height: 48, borderRadius: 14,
-                  background: 'rgba(6,182,212,0.15)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 22, flexShrink: 0,
-                }}>{sit.emoji}</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {SITUATIONS.map((sit) => (
+              <button
+                key={sit.id}
+                onClick={() => {
+                  setSituation(sit);
+                  setStep("about");
+                }}
+                style={{
+                  background: C.glass,
+                  border: `1px solid ${C.glassBdr}`,
+                  borderRadius: 18,
+                  padding: "18px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 14,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  textAlign: "left",
+                }}
+              >
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 14,
+                    background: "rgba(6,182,212,0.15)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 22,
+                    flexShrink: 0,
+                  }}
+                >
+                  {sit.emoji}
+                </div>
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: 'white' }}>
+                  <div
+                    style={{ fontSize: 14, fontWeight: 700, color: "white" }}
+                  >
                     {sit.title}
                   </div>
                   <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
@@ -288,48 +389,62 @@ export default function Connect({ user, go }) {
       )}
 
       {/* ── ABOUT THE PERSON ── */}
-      {step === 'about' && (
+      {step === "about" && (
         <>
-          <button onClick={() => setStep('pick')} style={back}>← Back</button>
+          <button onClick={() => setStep("pick")} style={back}>
+            ← Back
+          </button>
           <Chips />
 
           <div>
-            <h2 style={{ fontSize: 22, fontWeight: 900, color: 'white', margin: 0 }}>
+            <h2
+              style={{
+                fontSize: 22,
+                fontWeight: 900,
+                color: "white",
+                margin: 0,
+              }}
+            >
               Who are you messaging?
             </h2>
-            <p style={{ fontSize: 13, color: C.sub, margin: '6px 0 0' }}>
+            <p style={{ fontSize: 13, color: C.sub, margin: "6px 0 0" }}>
               The more you tell us, the better the message
             </p>
           </div>
 
           {/* Audience grid */}
-          <OptionGrid items={AUDIENCES} onSelect={a => setAudience(a)} />
+          <OptionGrid items={AUDIENCES} onSelect={(a) => setAudience(a)} />
 
           {/* Name and handle */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <input
               value={personName}
-              onChange={e => setPersonName(e.target.value)}
+              onChange={(e) => setPersonName(e.target.value)}
               placeholder="Their name (optional) e.g. Jordan"
               style={inputBox}
             />
             <input
               value={personHandle}
-              onChange={e => setPersonHandle(e.target.value)}
+              onChange={(e) => setPersonHandle(e.target.value)}
               placeholder="Their @ handle (optional) e.g. @jordan_x"
               style={inputBox}
             />
           </div>
 
           <button
-            onClick={() => setStep('vibe')}
+            onClick={() => setStep("vibe")}
             disabled={!audience}
             style={{
               background: audience ? gr() : C.glass,
-              border: 'none', borderRadius: 14, padding: '16px',
-              color: 'white', fontSize: 15, fontWeight: 700,
-              cursor: audience ? 'pointer' : 'not-allowed',
-              width: '100%', fontFamily: 'inherit',
+              border: "none",
+              borderRadius: 14,
+              padding: "16px",
+              color: "white",
+              fontSize: 15,
+              fontWeight: 700,
+              cursor: audience ? "pointer" : "not-allowed",
+              width: "100%",
+              fontFamily: "inherit",
               opacity: audience ? 1 : 0.5,
             }}
           >
@@ -339,192 +454,445 @@ export default function Connect({ user, go }) {
       )}
 
       {/* ── VIBE (tone + purpose combined) ── */}
-      {step === 'vibe' && (
+      {step === "vibe" && (
         <>
-          <button onClick={() => setStep('about')} style={back}>← Back</button>
+          <button onClick={() => setStep("about")} style={back}>
+            ← Back
+          </button>
           <Chips />
 
           <div>
-            <h2 style={{ fontSize: 22, fontWeight: 900, color: 'white', margin: 0 }}>
+            <h2
+              style={{
+                fontSize: 22,
+                fontWeight: 900,
+                color: "white",
+                margin: 0,
+              }}
+            >
               How do you want to come across?
             </h2>
-            <p style={{ fontSize: 13, color: C.sub, margin: '6px 0 0' }}>
+            <p style={{ fontSize: 13, color: C.sub, margin: "6px 0 0" }}>
               Pick a tone
             </p>
           </div>
 
-          <OptionGrid items={TONES} onSelect={t => setTone(t)} />
+          <OptionGrid items={TONES} onSelect={(t) => setTone(t)} />
 
           {tone && (
             <>
               <div>
-                <h2 style={{ fontSize: 20, fontWeight: 900, color: 'white', margin: 0 }}>
+                <h2
+                  style={{
+                    fontSize: 20,
+                    fontWeight: 900,
+                    color: "white",
+                    margin: 0,
+                  }}
+                >
                   What's the goal?
                 </h2>
-                <p style={{ fontSize: 13, color: C.sub, margin: '6px 0 0' }}>
+                <p style={{ fontSize: 13, color: C.sub, margin: "6px 0 0" }}>
                   What do you actually want to achieve?
                 </p>
               </div>
-              <OptionGrid items={PURPOSES} onSelect={p => { setPurpose(p); setStep('context'); }} />
+              <OptionGrid
+                items={PURPOSES}
+                onSelect={(p) => {
+                  setPurpose(p);
+                  setStep("context");
+                }}
+              />
             </>
           )}
         </>
       )}
 
       {/* ── CONTEXT ── */}
-      {step === 'context' && situation && (
+      {step === "context" && situation && (
         <>
-          <button onClick={() => setStep('vibe')} style={back}>← Back</button>
+          <button onClick={() => setStep("vibe")} style={back}>
+            ← Back
+          </button>
           <Chips />
 
           <div>
-            <div style={{ fontSize: 28, marginBottom: 8 }}>{situation.emoji}</div>
-            <h2 style={{ fontSize: 22, fontWeight: 900, color: 'white', margin: 0 }}>
-              Give it the full picture
+            <div style={{ fontSize: 28, marginBottom: 8 }}>
+              {situation.emoji}
+            </div>
+            <h2
+              style={{
+                fontSize: 22,
+                fontWeight: 900,
+                color: "white",
+                margin: 0,
+              }}
+            >
+              Tell us what's going on
             </h2>
-            <p style={{ fontSize: 13, color: C.sub, margin: '6px 0 0' }}>
-              The more detail you add, the better the message will match exactly what you need
+            <p style={{ fontSize: 13, color: C.sub, margin: "6px 0 0" }}>
+              The more you share, the better the message
             </p>
           </div>
 
           {/* Story image upload */}
-          {situation.id === 'reply_story' && (
-            <div>
-              {!image ? (
-                <label style={{
-                  background: C.glass, border: `1px dashed ${C.glassBdr}`,
-                  borderRadius: 16, padding: '24px 16px', display: 'flex',
-                  flexDirection: 'column', alignItems: 'center', gap: 8, cursor: 'pointer',
-                }}>
-                  <span style={{ fontSize: 28 }}>📤</span>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: C.sub }}>
-                    Upload screenshot of their story (optional)
-                  </span>
-                  <input
-                    type="file" accept="image/*"
-                    onChange={handleImageUpload}
-                    style={{ display: 'none' }}
-                  />
-                </label>
-              ) : (
-                <div style={{ position: 'relative' }}>
-                  <img src={image} alt="Story" style={{
-                    width: '100%', borderRadius: 16, maxHeight: 220,
-                    objectFit: 'cover', border: `1px solid ${C.glassBdr}`,
-                  }} />
-                  <button onClick={() => setImage(null)} style={{
-                    position: 'absolute', top: 8, right: 8,
-                    background: 'rgba(0,0,0,0.7)', border: 'none',
-                    borderRadius: '50%', width: 32, height: 32,
-                    color: 'white', fontSize: 14, cursor: 'pointer',
-                  }}>✕</button>
-                </div>
-              )}
+          {situation.id === "reply_story" &&
+            (!image ? (
+              <label
+                style={{
+                  background: C.glass,
+                  border: `1px dashed ${C.glassBdr}`,
+                  borderRadius: 14,
+                  padding: "20px 16px",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 6,
+                  cursor: "pointer",
+                }}
+              >
+                <span style={{ fontSize: 24 }}>📤</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: C.sub }}>
+                  Upload their story screenshot (optional)
+                </span>
+
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  style={{ display: "none" }}
+                />
+              </label>
+            ) : (
+              <div style={{ position: "relative" }}>
+                <img
+                  src={image}
+                  alt="Story"
+                  style={{
+                    width: "100%",
+                    borderRadius: 14,
+                    maxHeight: 200,
+                    objectFit: "cover",
+                    border: `1px solid ${C.glassBdr}`,
+                  }}
+                />
+
+                <button
+                  onClick={() => setImage(null)}
+                  style={{
+                    position: "absolute",
+                    top: 8,
+                    right: 8,
+                    background: "rgba(0,0,0,0.7)",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: 30,
+                    height: 30,
+                    color: "white",
+                    fontSize: 14,
+                    cursor: "pointer",
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+
+          {/* Quick scenario chips */}
+          <div>
+            <p
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: C.muted,
+                letterSpacing: "0.08em",
+                margin: "0 0 10px",
+              }}
+            >
+              QUICK FILL — TAP ANY THAT FITS:
+            </p>
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {(situation.id === "reply_story"
+                ? [
+                    "They posted a selfie looking happy",
+                    "They posted a travel photo",
+                    "They posted food",
+                    "They shared an achievement",
+                    "They posted something funny",
+                    "They shared a throwback photo",
+                    "They're out with friends",
+                  ]
+                : situation.id === "start_chat"
+                ? [
+                    "We met at school/work",
+                    "We matched on an app",
+                    "Friend of a friend",
+                    "We've never spoken before",
+                    "We used to talk but lost contact",
+                    "I like their content online",
+                    "We've met in person once",
+                  ]
+                : [
+                    "They had a bad day",
+                    "They're stressed out",
+                    "They shared good news",
+                    "They said something funny",
+                    "They're being distant",
+                    "They asked me something",
+                    "They're going through something hard",
+                    "They said they miss me",
+                  ]
+              ).map((chip, i) => (
+                <button
+                  key={i}
+                  onClick={() => {
+                    setContext((prev) => (prev ? `${prev}. ${chip}` : chip));
+                  }}
+                  style={{
+                    background: context.includes(chip) ? gr() : C.glass,
+                    border: `1px solid ${C.glassBdr}`,
+                    borderRadius: 99,
+                    padding: "7px 14px",
+                    cursor: "pointer",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: "white",
+                    fontFamily: "inherit",
+                    transition: "all 0.15s",
+                  }}
+                >
+                  {chip}
+                </button>
+              ))}
             </div>
-          )}
+          </div>
 
           {/* Main context */}
-          <div style={{
-            background: C.glass, border: `1px solid ${C.glassBdr}`,
-            borderRadius: 16, padding: '16px',
-          }}>
-            <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: C.muted, margin: '0 0 10px' }}>
-              {situation.id === 'reply_text'
-                ? '💬 WHAT EXACTLY DID THEY SAY?'
-                : situation.id === 'reply_story'
-                ? '📸 DESCRIBE THE POST / CAPTION'
-                : '💡 BACKGROUND OR CONTEXT'}
+          <div
+            style={{
+              background: C.glass,
+              border: `1px solid ${C.glassBdr}`,
+              borderRadius: 16,
+              padding: "16px",
+            }}
+          >
+            <p
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: "0.1em",
+                color: C.muted,
+                margin: "0 0 8px",
+              }}
+            >
+              {situation.id === "reply_text"
+                ? "💬 WHAT DID THEY SAY? (paste it exactly)"
+                : situation.id === "reply_story"
+                ? "📸 DESCRIBE THE POST OR CAPTION"
+                : "💡 WHAT DO YOU WANT TO SAY OR BRING UP?"}
             </p>
+
             <textarea
               value={context}
-              onChange={e => setContext(e.target.value)}
+              onChange={(e) => setContext(e.target.value)}
               placeholder={
-                situation.id === 'reply_text'
-                  ? "Paste or type exactly what they said to you..."
-                  : situation.id === 'reply_story'
-                  ? "Describe the story or post — what's in it, their caption, the mood..."
-                  : "Tell us anything helpful — how you know them, what you want to say, what topic to bring up..."
+                situation.id === "reply_text"
+                  ? "Paste exactly what they said to you..."
+                  : situation.id === "reply_story"
+                  ? "e.g. She posted a beach photo with friends, caption said 'needed this'..."
+                  : "e.g. We both love music, I want to invite them to a concert..."
               }
-              rows={4}
-              style={textArea}
+              rows={3}
+              style={{
+                width: "100%",
+                background: "transparent",
+                border: "none",
+                color: "#fff",
+                fontSize: 14,
+                fontWeight: 500,
+                outline: "none",
+                fontFamily: "inherit",
+                resize: "none",
+              }}
             />
           </div>
 
           {/* Past messages */}
-          <div style={{
-            background: C.glass, border: `1px solid ${C.glassBdr}`,
-            borderRadius: 16, padding: '16px',
-          }}>
-            <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: C.muted, margin: '0 0 6px' }}>
-              🗂️ PASTE PREVIOUS MESSAGES (OPTIONAL BUT HELPS A LOT)
-            </p>
-            <p style={{ fontSize: 11, color: C.muted, margin: '0 0 10px', lineHeight: 1.5 }}>
-              Copy and paste your conversation history so we can match the vibe and reference what's already been said
-            </p>
-            <textarea
-              value={pastMessages}
-              onChange={e => setPastMessages(e.target.value)}
-              placeholder={
-`Example format:
-Them: Hey how was your day?
-Me: Pretty good actually just tired
-Them: Same honestly, been so stressed lately`
-              }
-              rows={5}
-              style={{ ...textArea, fontSize: 13 }}
-            />
-          </div>
+          <details style={{ cursor: "pointer" }}>
+            <summary
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                color: C.sub,
+                listStyle: "none",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <span>🗂️</span>
+              Add past conversation (optional — helps a lot)
+              <span style={{ fontSize: 11, color: C.muted }}>
+                tap to expand
+              </span>
+            </summary>
 
-          <button onClick={generate} style={{
-            background: gr(), border: 'none', borderRadius: 14,
-            padding: '17px', color: 'white', fontSize: 15,
-            fontWeight: 700, cursor: 'pointer', width: '100%', fontFamily: 'inherit',
-          }}>
+            <div style={{ marginTop: 10 }}>
+              <p
+                style={{
+                  fontSize: 12,
+                  color: C.muted,
+                  margin: "0 0 8px",
+                  lineHeight: 1.5,
+                }}
+              >
+                Paste your chat history so we can match your vibe and reference
+                what's already been said.
+              </p>
+
+              <div
+                style={{
+                  background: C.glass,
+                  border: `1px solid ${C.glassBdr}`,
+                  borderRadius: 14,
+                  padding: "14px",
+                }}
+              >
+                <textarea
+                  value={pastMessages}
+                  onChange={(e) => setPastMessages(e.target.value)}
+                  placeholder={`Them: Hey how was your day?
+Me: Pretty good, just tired lol
+Them: Same, been so stressed lately...`}
+                  rows={5}
+                  style={{
+                    width: "100%",
+                    background: "transparent",
+                    border: "none",
+                    color: "#fff",
+                    fontSize: 13,
+                    fontWeight: 400,
+                    outline: "none",
+                    fontFamily: "inherit",
+                    resize: "none",
+                  }}
+                />
+              </div>
+            </div>
+          </details>
+
+          <button
+            onClick={generate}
+            style={{
+              background: gr(),
+              border: "none",
+              borderRadius: 14,
+              padding: "17px",
+              color: "white",
+              fontSize: 15,
+              fontWeight: 700,
+              cursor: "pointer",
+              width: "100%",
+              fontFamily: "inherit",
+            }}
+          >
             Generate Message ✨
           </button>
         </>
       )}
 
       {/* ── RESULT ── */}
-      {step === 'result' && (
+      {step === "result" && (
         <>
-          <button onClick={() => setStep('context')} style={back}>← Back</button>
+          <button onClick={() => setStep("context")} style={back}>
+            ← Back
+          </button>
 
-          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', color: C.muted, margin: 0 }}>
-            {loading ? 'CRAFTING YOUR MESSAGE...' : "HERE'S WHAT TO SEND"}
+          <p
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: "0.14em",
+              color: C.muted,
+              margin: 0,
+            }}
+          >
+            {loading ? "CRAFTING YOUR MESSAGE..." : "HERE'S WHAT TO SEND"}
           </p>
 
-          <div style={{
-            background: gr(145), borderRadius: 24, padding: '24px 20px',
-            boxShadow: '0 20px 50px rgba(6,182,212,0.25)',
-            minHeight: 120, display: 'flex', alignItems: 'flex-start',
-          }}>
+          <div
+            style={{
+              background: gr(145),
+              borderRadius: 24,
+              padding: "24px 20px",
+              boxShadow: "0 20px 50px rgba(6,182,212,0.25)",
+              minHeight: 120,
+              display: "flex",
+              alignItems: "flex-start",
+            }}
+          >
             {loading ? (
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center', margin: 'auto' }}>
-                {[0, 1, 2].map(i => (
-                  <div key={i} style={{
-                    width: 8, height: 8, borderRadius: '50%',
-                    background: 'rgba(255,255,255,0.6)',
-                    animation: `popIn 0.6s ${i * 0.15}s ease-in-out infinite alternate`,
-                  }} />
+              <div
+                style={{
+                  display: "flex",
+                  gap: 6,
+                  alignItems: "center",
+                  margin: "auto",
+                }}
+              >
+                {[0, 1, 2].map((i) => (
+                  <div
+                    key={i}
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      background: "rgba(255,255,255,0.6)",
+                      animation: `popIn 0.6s ${
+                        i * 0.15
+                      }s ease-in-out infinite alternate`,
+                    }}
+                  />
                 ))}
               </div>
             ) : (
-              <div style={{ width: '100%' }}>
+              <div style={{ width: "100%" }}>
                 <div style={{ fontSize: 26, marginBottom: 12 }}>
                   {situation?.emoji}
                 </div>
-                <p style={{
-                  fontSize: 16, fontWeight: 600, color: 'white',
-                  lineHeight: 1.65, margin: 0, whiteSpace: 'pre-wrap',
-                }}>
+                <p
+                  style={{
+                    fontSize: 16,
+                    fontWeight: 600,
+                    color: "white",
+                    lineHeight: 1.65,
+                    margin: 0,
+                    whiteSpace: "pre-wrap",
+                  }}
+                >
                   {picked}
                 </p>
                 {(audience || tone) && (
-                  <div style={{ marginTop: 14, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  <div
+                    style={{
+                      marginTop: 14,
+                      display: "flex",
+                      gap: 6,
+                      flexWrap: "wrap",
+                    }}
+                  >
                     {personName && <div style={pill()}>👤 {personName}</div>}
-                    {audience && <div style={pill()}>{audience.emoji} {audience.label}</div>}
-                    {tone     && <div style={pill()}>{tone.emoji} {tone.label}</div>}
+                    {audience && (
+                      <div style={pill()}>
+                        {audience.emoji} {audience.label}
+                      </div>
+                    )}
+                    {tone && (
+                      <div style={pill()}>
+                        {tone.emoji} {tone.label}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -532,31 +900,57 @@ Them: Same honestly, been so stressed lately`
           </div>
 
           {!loading && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <button onClick={copyText} style={{
-                background: copied ? C.emerald : C.glass,
-                border: `1px solid ${copied ? C.emerald : C.glassBdr}`,
-                borderRadius: 14, padding: '16px', color: 'white',
-                fontSize: 15, fontWeight: 700, cursor: 'pointer',
-                width: '100%', fontFamily: 'inherit', transition: 'all 0.2s',
-              }}>
-                {copied ? '✓ Copied!' : '📋 Copy Message'}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <button
+                onClick={copyText}
+                style={{
+                  background: copied ? C.emerald : C.glass,
+                  border: `1px solid ${copied ? C.emerald : C.glassBdr}`,
+                  borderRadius: 14,
+                  padding: "16px",
+                  color: "white",
+                  fontSize: 15,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  width: "100%",
+                  fontFamily: "inherit",
+                  transition: "all 0.2s",
+                }}
+              >
+                {copied ? "✓ Copied!" : "📋 Copy Message"}
               </button>
 
-              <button onClick={generate} style={{
-                background: C.glass, border: `1px solid ${C.glassBdr}`,
-                borderRadius: 14, padding: '16px', color: 'white',
-                fontSize: 15, fontWeight: 700, cursor: 'pointer',
-                width: '100%', fontFamily: 'inherit',
-              }}>
+              <button
+                onClick={generate}
+                style={{
+                  background: C.glass,
+                  border: `1px solid ${C.glassBdr}`,
+                  borderRadius: 14,
+                  padding: "16px",
+                  color: "white",
+                  fontSize: 15,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  width: "100%",
+                  fontFamily: "inherit",
+                }}
+              >
                 🔄 Try Another Version
               </button>
 
-              <button onClick={reset} style={{
-                background: 'transparent', border: 'none', color: C.muted,
-                fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
-                padding: '8px', textAlign: 'center',
-              }}>
+              <button
+                onClick={reset}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: C.muted,
+                  fontSize: 13,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  padding: "8px",
+                  textAlign: "center",
+                }}
+              >
                 Start Over
               </button>
             </div>
@@ -565,54 +959,107 @@ Them: Same honestly, been so stressed lately`
       )}
 
       {/* ── HISTORY ── */}
-      {step === 'history' && (
+      {step === "history" && (
         <>
-          <button onClick={() => setStep('pick')} style={back}>← Back</button>
-          <h2 style={{ fontSize: 22, fontWeight: 900, color: 'white', margin: 0 }}>
+          <button onClick={() => setStep("pick")} style={back}>
+            ← Back
+          </button>
+          <h2
+            style={{ fontSize: 22, fontWeight: 900, color: "white", margin: 0 }}
+          >
             Recent Messages
           </h2>
 
           {getConnectHistory().length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+            <div style={{ textAlign: "center", padding: "60px 20px" }}>
               <div style={{ fontSize: 48, marginBottom: 12 }}>💬</div>
-              <div style={{ fontSize: 14, color: C.muted }}>No messages generated yet</div>
+              <div style={{ fontSize: 14, color: C.muted }}>
+                No messages generated yet
+              </div>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {getConnectHistory().map(item => (
-                <div key={item.id} style={{
-                  background: C.glass, border: `1px solid ${C.glassBdr}`,
-                  borderRadius: 16, padding: '14px 16px',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {getConnectHistory().map((item) => (
+                <div
+                  key={item.id}
+                  style={{
+                    background: C.glass,
+                    border: `1px solid ${C.glassBdr}`,
+                    borderRadius: 16,
+                    padding: "14px 16px",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      marginBottom: 8,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        flexWrap: "wrap",
+                      }}
+                    >
                       <span>{item.situationEmoji}</span>
                       {item.personName && (
-                        <span style={{ fontSize: 11, color: C.gold, fontWeight: 700 }}>
+                        <span
+                          style={{
+                            fontSize: 11,
+                            color: C.gold,
+                            fontWeight: 700,
+                          }}
+                        >
                           {item.personName}
                         </span>
                       )}
                       {item.audience && (
-                        <span style={{ fontSize: 10, color: C.sub }}>· {item.audience}</span>
+                        <span style={{ fontSize: 10, color: C.sub }}>
+                          · {item.audience}
+                        </span>
                       )}
                       {item.tone && (
-                        <span style={{ fontSize: 10, color: C.teal }}>· {item.tone}</span>
+                        <span style={{ fontSize: 10, color: C.teal }}>
+                          · {item.tone}
+                        </span>
                       )}
                     </div>
-                    <span style={{ fontSize: 10, color: C.muted, flexShrink: 0 }}>
+                    <span
+                      style={{ fontSize: 10, color: C.muted, flexShrink: 0 }}
+                    >
                       {timeAgo(item.timestamp)}
                     </span>
                   </div>
-                  <p style={{ fontSize: 13, color: 'white', margin: 0, lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>
+                  <p
+                    style={{
+                      fontSize: 13,
+                      color: "white",
+                      margin: 0,
+                      lineHeight: 1.55,
+                      whiteSpace: "pre-wrap",
+                    }}
+                  >
                     {item.message}
                   </p>
-                  <button onClick={() => {
-                    navigator.clipboard.writeText(item.message);
-                  }} style={{
-                    background: 'transparent', border: 'none',
-                    color: C.muted, fontSize: 11, cursor: 'pointer',
-                    fontFamily: 'inherit', padding: '6px 0 0', display: 'block',
-                  }}>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(item.message);
+                    }}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: C.muted,
+                      fontSize: 11,
+                      cursor: "pointer",
+                      fontFamily: "inherit",
+                      padding: "6px 0 0",
+                      display: "block",
+                    }}
+                  >
                     📋 Copy
                   </button>
                 </div>
@@ -623,36 +1070,68 @@ Them: Same honestly, been so stressed lately`
       )}
 
       {/* ── LIMIT ── */}
-      {step === 'limit' && (
-        <div style={{ textAlign: 'center', padding: '40px 16px' }}>
+      {step === "limit" && (
+        <div style={{ textAlign: "center", padding: "40px 16px" }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>✨</div>
-          <h2 style={{ fontSize: 20, fontWeight: 900, color: 'white', margin: '0 0 8px' }}>
+          <h2
+            style={{
+              fontSize: 20,
+              fontWeight: 900,
+              color: "white",
+              margin: "0 0 8px",
+            }}
+          >
             Daily limit reached
           </h2>
-          <p style={{ fontSize: 13, color: C.sub, marginBottom: 20, lineHeight: 1.6 }}>
+          <p
+            style={{
+              fontSize: 13,
+              color: C.sub,
+              marginBottom: 20,
+              lineHeight: 1.6,
+            }}
+          >
             You've used your {FREE_DAILY_CONNECT_LIMIT} free messages today.
             Come back tomorrow or upgrade for unlimited.
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <button onClick={() => go(13)} style={{
-              background: gr(), border: 'none', borderRadius: 14,
-              padding: '16px', color: 'white', fontSize: 15,
-              fontWeight: 700, cursor: 'pointer', width: '100%', fontFamily: 'inherit',
-            }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <button
+              onClick={() => go(13)}
+              style={{
+                background: gr(),
+                border: "none",
+                borderRadius: 14,
+                padding: "16px",
+                color: "white",
+                fontSize: 15,
+                fontWeight: 700,
+                cursor: "pointer",
+                width: "100%",
+                fontFamily: "inherit",
+              }}
+            >
               Upgrade to Pro 👑
             </button>
-            <button onClick={reset} style={{
-              background: C.glass, border: `1px solid ${C.glassBdr}`,
-              borderRadius: 14, padding: '16px', color: 'white',
-              fontSize: 15, fontWeight: 700, cursor: 'pointer',
-              width: '100%', fontFamily: 'inherit',
-            }}>
+            <button
+              onClick={reset}
+              style={{
+                background: C.glass,
+                border: `1px solid ${C.glassBdr}`,
+                borderRadius: 14,
+                padding: "16px",
+                color: "white",
+                fontSize: 15,
+                fontWeight: 700,
+                cursor: "pointer",
+                width: "100%",
+                fontFamily: "inherit",
+              }}
+            >
               Got it
             </button>
           </div>
         </div>
       )}
-
     </div>
   );
 }
