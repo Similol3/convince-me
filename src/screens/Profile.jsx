@@ -3,7 +3,7 @@ import { C, gr, grGold } from "../tokens";
 import { getLevelInfo, BADGES, RARITY } from "../data/levels";
 import { supabase } from "../lib/supabase";
 
-export default function Profile({ user, go, avatar }) {
+export default function Profile({ user, go, avatar, onSignIn, onSignUp }) {
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
@@ -51,6 +51,75 @@ export default function Profile({ user, go, avatar }) {
         background: `radial-gradient(ellipse 90% 50% at 50% 0%, rgba(139,92,246,0.2) 0%, ${C.bg} 60%)`,
       }}
     >
+      {stats.is_guest && (
+        <div
+          style={{
+            background: "rgba(139,92,246,0.1)",
+            border: "1px solid rgba(139,92,246,0.3)",
+            borderRadius: 18,
+            padding: "18px 16px",
+          }}
+        >
+          <div
+            style={{
+              fontSize: 13,
+              fontWeight: 700,
+              color: "white",
+              marginBottom: 4,
+            }}
+          >
+            💾 Save your progress
+          </div>
+          <div
+            style={{
+              fontSize: 12,
+              color: C.sub,
+              marginBottom: 14,
+              lineHeight: 1.5,
+            }}
+          >
+            Create a free account to save your decisions, appear on the
+            leaderboard, and unlock Pro features.
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              onClick={onSignUp}
+              style={{
+                flex: 1,
+                background: gr(),
+                border: "none",
+                borderRadius: 12,
+                padding: "12px",
+                color: "white",
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: "pointer",
+                fontFamily: "inherit",
+              }}
+            >
+              Create Account
+            </button>
+            <button
+              onClick={onSignIn}
+              style={{
+                flex: 1,
+                background: C.glass,
+                border: `1px solid ${C.glassBdr}`,
+                borderRadius: 12,
+                padding: "12px",
+                color: "white",
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: "pointer",
+                fontFamily: "inherit",
+              }}
+            >
+              Log In
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Avatar + name */}
       <div style={{ textAlign: "center", paddingTop: 8 }}>
         <div
