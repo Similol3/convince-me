@@ -43,25 +43,21 @@ export default function App() {
   const [avatar, setAvatar] = useState("🎲");
   const [lastResult, setLastResult] = useState(null);
 
-  const [time, setTime] = useState(new Date());
-  const [battery, setBattery] = useState(100);
-
   // ── Auth listener ──────────────────────────────────────
   useEffect(() => {
-    getSession().then(s => {
+    getSession().then((s) => {
       setSession(s);
       setAuthReady(true);
     });
-  
-    const { data: listener } = onAuthChange(s => {
+
+    const { data: listener } = onAuthChange((s) => {
       setSession(s);
       // Auto-close any open auth modal once a real session exists
       if (s) setAuthModal(null);
     });
-  
+
     return () => listener?.subscription?.unsubscribe();
   }, []);
-  
 
   // ── Load user (real or guest) ──────────────────────────
   useEffect(() => {
@@ -87,17 +83,21 @@ export default function App() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const paymentStatus = params.get("payment");
-    const userId = params.get("userId");
 
     if (paymentStatus === "success") {
       window.history.replaceState({}, "", window.location.pathname);
-      setShowProSuccess(true);
 
-      // Refresh user data to pick up is_pro
+      // Refresh user data first, THEN show success screen
       if (session?.user) {
         getOrCreateProfile(session.user).then((profile) => {
-          if (profile) setUser(profile);
+          if (profile) {
+            setUser(profile);
+            setAvatar(profile.avatar || "🎲");
+          }
+          setShowProSuccess(true);
         });
+      } else {
+        setShowProSuccess(true);
       }
     } else if (paymentStatus === "cancelled") {
       window.history.replaceState({}, "", window.location.pathname);
@@ -377,6 +377,7 @@ export default function App() {
               onRequireLogin={() => setAuthModal("signup")}
             />
           )}
+
           {screen === 14 && <Leaderboard user={user} />}
         </div>
 
