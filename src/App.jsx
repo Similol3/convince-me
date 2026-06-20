@@ -48,14 +48,20 @@ export default function App() {
 
   // ── Auth listener ──────────────────────────────────────
   useEffect(() => {
-    getSession().then((s) => {
+    getSession().then(s => {
       setSession(s);
       setAuthReady(true);
     });
-
-    const { data: listener } = onAuthChange((s) => setSession(s));
+  
+    const { data: listener } = onAuthChange(s => {
+      setSession(s);
+      // Auto-close any open auth modal once a real session exists
+      if (s) setAuthModal(null);
+    });
+  
     return () => listener?.subscription?.unsubscribe();
   }, []);
+  
 
   // ── Load user (real or guest) ──────────────────────────
   useEffect(() => {
