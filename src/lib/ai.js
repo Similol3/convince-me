@@ -1,30 +1,19 @@
 export async function generateMessage({
-  situationId,
-  context,
-  image,
-  audience,
-  tone,
-  purpose,
-  personName,
-  personHandle,
-  pastMessages,
+  situationId, context, image, audience, tone,
+  purpose, personName, personHandle, pastMessages,
+  pastImage,  // ← add this
 }) {
   try {
     const response = await fetch('/api/generate', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        situationId,
-        context,
-        image,
-        audience,
-        tone,
-        purpose,
-        personName,
-        personHandle,
-        pastMessages,
+        situationId, context, image, audience, tone,
+        purpose, personName, personHandle, pastMessages,
+        pastImage,  // ← add this
       }),
     });
+
 
     if (!response.ok) throw new Error('API failed');
     const data = await response.json();

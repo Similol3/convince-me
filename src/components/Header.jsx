@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { C, gr } from '../tokens';
 import { AVATARS } from '../data/avatars';
 import { resizeImageToBase64 } from '../lib/image';
+import { AVATARS, PRO_AVATARS } from '../data/avatars';
 
 export default function Header({
   showBack, onBack, streak,

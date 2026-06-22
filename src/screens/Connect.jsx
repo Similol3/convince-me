@@ -93,6 +93,7 @@ export default function Connect({ user, go }) {
   const [context, setContext] = useState("");
   const [pastMessages, setPastMessages] = useState("");
   const [image, setImage] = useState(null);
+  const [pastImage, setPastImage] = useState(null);
 
   const [picked, setPicked] = useState(null);
   const [copied, setCopied] = useState(false);
@@ -136,16 +137,18 @@ export default function Connect({ user, go }) {
     setStep("result");
 
     const text = await generateMessage({
-      situationId: situation.id,
+      situationId:  situation.id,
       context,
       image,
-      audience: audience?.id,
-      tone: tone?.id,
-      purpose: purpose?.id,
-      personName: personName.trim(),
+      audience:     audience?.id,
+      tone:         tone?.id,
+      purpose:      purpose?.id,
+      personName:   personName.trim(),
       personHandle: personHandle.trim(),
       pastMessages: pastMessages.trim(),
+      pastImage,    // ← add this
     });
+    
 
     setPicked(text);
 
@@ -733,24 +736,105 @@ export default function Connect({ user, go }) {
             >
               <span>🗂️</span>
               Add past conversation (optional — helps a lot)
-              <span style={{ fontSize: 11, color: C.muted }}>
+              <span
+                style={{ fontSize: 11, color: C.muted, marginLeft: "auto" }}
+              >
                 tap to expand
               </span>
             </summary>
 
-            <div style={{ marginTop: 10 }}>
+            <div
+              style={{
+                marginTop: 10,
+                display: "flex",
+                flexDirection: "column",
+                gap: 10,
+              }}
+            >
               <p
                 style={{
                   fontSize: 12,
                   color: C.muted,
-                  margin: "0 0 8px",
+                  margin: 0,
                   lineHeight: 1.5,
                 }}
               >
-                Paste your chat history so we can match your vibe and reference
-                what's already been said.
+                Upload a screenshot of your chat or paste the messages below.
               </p>
 
+              {/* Screenshot upload */}
+              {!pastImage ? (
+                <label
+                  style={{
+                    background: C.glass,
+                    border: `1px dashed ${C.glassBdr}`,
+                    borderRadius: 14,
+                    padding: "16px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    cursor: "pointer",
+                  }}
+                >
+                  <span style={{ fontSize: 22 }}>📷</span>
+                  <div>
+                    <div
+                      style={{ fontSize: 13, fontWeight: 600, color: "white" }}
+                    >
+                      Upload chat screenshot
+                    </div>
+                    <div style={{ fontSize: 11, color: C.muted }}>
+                      Tap to upload from your gallery
+                    </div>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = () => setPastImage(reader.result);
+                      reader.readAsDataURL(file);
+                    }}
+                    style={{ display: "none" }}
+                  />
+                </label>
+              ) : (
+                <div style={{ position: "relative" }}>
+                  <img
+                    src={pastImage}
+                    alt="Chat screenshot"
+                    style={{
+                      width: "100%",
+                      borderRadius: 14,
+                      maxHeight: 200,
+                      objectFit: "cover",
+                      border: `1px solid ${C.glassBdr}`,
+                    }}
+                  />
+                  <button
+                    onClick={() => setPastImage(null)}
+                    style={{
+                      position: "absolute",
+                      top: 8,
+                      right: 8,
+                      background: "rgba(0,0,0,0.7)",
+                      border: "none",
+                      borderRadius: "50%",
+                      width: 28,
+                      height: 28,
+                      color: "white",
+                      fontSize: 13,
+                      cursor: "pointer",
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+
+              {/* OR typed messages */}
               <div
                 style={{
                   background: C.glass,
@@ -759,13 +843,22 @@ export default function Connect({ user, go }) {
                   padding: "14px",
                 }}
               >
+                <p
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: C.muted,
+                    letterSpacing: "0.08em",
+                    margin: "0 0 8px",
+                  }}
+                >
+                  OR TYPE/PASTE MESSAGES
+                </p>
                 <textarea
                   value={pastMessages}
                   onChange={(e) => setPastMessages(e.target.value)}
-                  placeholder={`Them: Hey how was your day?
-Me: Pretty good, just tired lol
-Them: Same, been so stressed lately...`}
-                  rows={5}
+                  placeholder={`Them: Hey how was your day?\nMe: Pretty good, just tired lol\nThem: Same, been so stressed lately...`}
+                  rows={4}
                   style={{
                     width: "100%",
                     background: "transparent",
