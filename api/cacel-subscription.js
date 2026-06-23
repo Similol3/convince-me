@@ -1,13 +1,6 @@
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
-const supabase = createClient(
-  process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
-
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -18,46 +11,72 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  const supabaseUrl = process.env.SUPABASE_URL
+    || process.env.VITE_SUPABASE_URL
+    || process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+  const supabaseKey = process.env.SUPABASE_SERVICE_KEY
+    || process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('Missing Supabase env vars');
+    return res.status(500).json({
+      error: 'Server configuration error. Please contact support.',
+    });
+  }
+
+  if (!process.env.STRIPE_SECRET_KEY) {
+    console.error('Missing STRIPE_SECRET_KEY');
+    return res.status(500).json({
+      error: 'Payment system configuration error.',
+    });
+  }
+
+  const stripe   = new Stripe(process.env.STRIPE_SECRET_KEY);
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
   const { stripeCustomerId, userId } = req.body;
 
   if (!stripeCustomerId) {
     return res.status(400).json({
-      error: 'No subscription found for this account.',
+      error:
+        'No payment account found. Please contact support if you believe this is an error.',
     });
   }
 
   try {
-    // Get active subscriptions for this customer
-    const subscriptions = await stripe.subscriptions.list({
+    // Try to find active subscription
+    let subscription = null;
+
+    const active = await stripe.subscriptions.list({
       customer: stripeCustomerId,
       status:   'active',
       limit:    1,
     });
 
-    if (subscriptions.data.length === 0) {
-      // Check for trialing subscriptions too
+    if (active.data.length > 0) {
+      subscription = active.data[0];
+    } else {
+      // Try trialing
       const trialing = await stripe.subscriptions.list({
         customer: stripeCustomerId,
         status:   'trialing',
         limit:    1,
       });
-
-      if (trialing.data.length === 0) {
-        return res.status(404).json({
-          error: 'No active subscription found to cancel.',
-        });
+      if (trialing.data.length > 0) {
+        subscription = trialing.data[0];
       }
     }
 
-    const sub = subscriptions.data[0]
-      || (await stripe.subscriptions.list({
-           customer: stripeCustomerId,
-           status: 'trialing',
-           limit: 1,
-         })).data[0];
+    if (!subscription) {
+      return res.status(404).json({
+        error:
+          'No active subscription found. It may have already been cancelled.',
+      });
+    }
 
-    // Cancel at period end — user keeps access until billing period ends
-    const updated = await stripe.subscriptions.update(sub.id, {
+    // Cancel at period end — keeps access until billing period ends
+    const updated = await stripe.subscriptions.update(subscription.id, {
       cancel_at_period_end: true,
     });
 
@@ -65,7 +84,7 @@ export default async function handler(req, res) {
       updated.current_period_end * 1000
     ).toISOString();
 
-    // Update Supabase to reflect cancellation pending
+    // Update Supabase
     if (userId) {
       await supabase
         .from('users')
@@ -77,9 +96,8 @@ export default async function handler(req, res) {
       success:    true,
       cancelDate,
     });
-
   } catch (err) {
-    console.error('Cancel subscription error:', err);
+    console.error('Cancel subscription error:', err.message);
     return res.status(500).json({
       error: 'Could not cancel subscription. Please try again.',
     });
