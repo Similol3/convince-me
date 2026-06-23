@@ -24,6 +24,8 @@ export default function Header({
       padding: '12px 16px', background: C.bg,
       borderBottom: `1px solid ${C.border}`, position: 'relative',
     }}>
+
+      {/* Left — back arrow or leaderboard trophy */}
       {showBack ? (
         <button onClick={onBack} style={{
           background: C.card2, border: `1px solid ${C.border}`,
@@ -40,6 +42,7 @@ export default function Header({
         }}>🏆</button>
       )}
 
+      {/* Center — app name */}
       <div style={{
         background: C.card, border: `1px solid ${C.border}`,
         borderRadius: 99, padding: '6px 18px',
@@ -49,6 +52,7 @@ export default function Header({
         </span>
       </div>
 
+      {/* Right — streak + upgrade crown + avatar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         {streak && (
           <div style={{
@@ -85,32 +89,46 @@ export default function Header({
         </button>
       </div>
 
+      {/* Avatar picker dropdown */}
       {showPicker && (
         <>
-          <div onClick={() => setShowPicker(false)} style={{ position: 'fixed', inset: 0, zIndex: 90 }} />
+          <div onClick={() => setShowPicker(false)}
+            style={{ position: 'fixed', inset: 0, zIndex: 90 }} />
+
           <div style={{
             position: 'absolute', top: 56, right: 16, zIndex: 91,
             background: C.card2, border: `1px solid ${C.glassBdr}`,
-            borderRadius: 16, padding: 12, width: 220,
+            borderRadius: 16, padding: 12, width: 236,
             boxShadow: '0 12px 32px rgba(0,0,0,0.5)',
+            maxHeight: 400, overflowY: 'auto',
           }}>
+
+            {/* Photo upload — Pro only */}
             {isPro ? (
               <label style={{
                 display: 'flex', alignItems: 'center', gap: 8,
                 background: gr(), border: `1px solid ${C.glassBdr}`,
-                borderRadius: 12, padding: '10px 12px', marginBottom: 10, cursor: 'pointer',
+                borderRadius: 12, padding: '10px 12px',
+                marginBottom: 12, cursor: 'pointer',
               }}>
                 <span style={{ fontSize: 16 }}>🖼️</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: 'white' }}>Upload Photo</span>
-                <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: 'white' }}>
+                  Upload Photo
+                </span>
+                <input
+                  type="file" accept="image/*"
+                  onChange={handlePhotoUpload}
+                  style={{ display: 'none' }}
+                />
               </label>
             ) : (
               <div style={{
-                background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)',
-                borderRadius: 12, padding: '10px 12px', marginBottom: 10,
+                background: 'rgba(245,158,11,0.1)',
+                border: '1px solid rgba(245,158,11,0.3)',
+                borderRadius: 12, padding: '10px 12px', marginBottom: 12,
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <span style={{ fontSize: 16 }}>👑</span>
+                  <span style={{ fontSize: 14 }}>👑</span>
                   <span style={{ fontSize: 12, fontWeight: 700, color: 'white' }}>
                     Custom photos are a Pro feature
                   </span>
@@ -118,24 +136,84 @@ export default function Header({
                 <button onClick={() => { setShowPicker(false); onUpgrade(); }} style={{
                   background: gr(), border: 'none', borderRadius: 8,
                   padding: '6px 12px', color: 'white', fontSize: 11,
-                  fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', width: '100%',
+                  fontWeight: 700, cursor: 'pointer',
+                  fontFamily: 'inherit', width: '100%',
                 }}>
                   Upgrade to Pro →
                 </button>
               </div>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+            {/* Free avatars */}
+            <div style={{
+              fontSize: 10, fontWeight: 700, color: C.muted,
+              letterSpacing: '0.08em', marginBottom: 8,
+            }}>
+              FREE
+            </div>
+            <div style={{
+              display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: 8, marginBottom: 14,
+            }}>
               {AVATARS.map(a => (
-                <button key={a} onClick={() => { onAvatarChange(a); setShowPicker(false); }} style={{
-                  width: 38, height: 38, borderRadius: 10,
-                  background: (a === avatar && !avatarImage) ? gr() : C.glass,
-                  border: `1px solid ${C.glassBdr}`,
-                  fontSize: 18, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>{a}</button>
+                <button key={a}
+                  onClick={() => { onAvatarChange(a); setShowPicker(false); }}
+                  style={{
+                    width: 38, height: 38, borderRadius: 10,
+                    background: (a === avatar && !avatarImage) ? gr() : C.glass,
+                    border: `1px solid ${C.glassBdr}`,
+                    fontSize: 18, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >{a}</button>
               ))}
             </div>
+
+            {/* Pro avatars */}
+            <div style={{
+              fontSize: 10, fontWeight: 700, color: C.gold,
+              letterSpacing: '0.08em', marginBottom: 8,
+              display: 'flex', alignItems: 'center', gap: 4,
+            }}>
+              👑 PRO ONLY
+            </div>
+            <div style={{
+              display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8,
+            }}>
+              {PRO_AVATARS.map(a => (
+                isPro ? (
+                  <button key={a}
+                    onClick={() => { onAvatarChange(a); setShowPicker(false); }}
+                    style={{
+                      width: 38, height: 38, borderRadius: 10,
+                      background: (a === avatar && !avatarImage) ? gr() : C.glass,
+                      border: `1px solid rgba(245,158,11,0.4)`,
+                      fontSize: 18, cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}
+                  >{a}</button>
+                ) : (
+                  <div key={a}
+                    onClick={() => { setShowPicker(false); onUpgrade(); }}
+                    style={{
+                      width: 38, height: 38, borderRadius: 10,
+                      background: 'rgba(255,255,255,0.03)',
+                      border: `1px solid ${C.glassBdr}`,
+                      fontSize: 18, cursor: 'pointer',
+                      opacity: 0.45, position: 'relative',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}
+                  >
+                    {a}
+                    <div style={{
+                      position: 'absolute', bottom: 1, right: 2,
+                      fontSize: 8, lineHeight: 1,
+                    }}>🔒</div>
+                  </div>
+                )
+              ))}
+            </div>
+
           </div>
         </>
       )}
