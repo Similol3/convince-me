@@ -42,6 +42,7 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [avatar, setAvatar] = useState("🎲");
   const [lastResult, setLastResult] = useState(null);
+  const [aiRecommendation, setAiRecommendation] = useState(null);
 
   // ── Auth listener ──────────────────────────────────────
   useEffect(() => {
@@ -105,11 +106,12 @@ export default function App() {
   }, [session]);
 
   // ── Navigation ─────────────────────────────────────────
-  const go = (n, a, b, ans, cat) => {
+  const go = (n, a, b, ans, cat, rec) => {
     if (a !== undefined) setOptA(a);
     if (b !== undefined) setOptB(b);
     if (ans !== undefined) setAnswers(ans);
     if (cat !== undefined) setCategory(cat);
+    if (rec !== undefined) setAiRecommendation(rec);
     setScreen(n);
   };
 
@@ -350,11 +352,14 @@ export default function App() {
               answers={answers}
               user={user}
               category={category}
+              aiRecommendation={aiRecommendation}
               go={go}
               onDecided={handleDecided}
             />
           )}
-          {screen === 4 && <Share optA={optA} go={go} />}
+          {screen === 4 && (
+            <Share optA={optA} aiRecommendation={aiRecommendation} go={go} />
+          )}
           {screen === 5 && (
             <Rematch result={lastResult} onDecided={handleDecided} go={go} />
           )}

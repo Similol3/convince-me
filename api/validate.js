@@ -8,76 +8,123 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { optionA, optionB, category } = req.body;
+  const { optionA, optionB, category, vibe, wantRecommendation } = req.body;
 
-  // General category — always valid, no check needed
+  // General — skip validation, just give recommendation if asked
   if (category === 'general') {
-    return res.status(200).json({ valid: true, recommendation: null });
+    if (!wantRecommendation) {
+      return res.status(200).json({ valid: true, recommendation: null });
+    }
+
+    const generalPrompt = `Someone is deciding between: "${optionA}" vs "${optionB}".
+
+Give a clear, honest recommendation on which option is better for them right now.
+Be specific, direct and helpful. Consider practical benefits of each.
+Keep it under 3 sentences. Return ONLY the recommendation text, nothing else.`;
+
+    try {
+      const r = await callGemini(generalPrompt, process.env.GEMINI_API_KEY);
+      return res.status(200).json({ valid: true, recommendation: r });
+    } catch {
+      return res.status(200).json({ valid: true, recommendation: null });
+    }
   }
 
-  const PROMPTS = {
-    food: `You are checking if two options are food or drink related, AND optionally giving a recommendation.
+  // Food validation + recommendation
+  if (category === 'food') {
+    const prompt = `You are a food expert and assistant.
 
-Option A: "${optionA}"
-Option B: "${optionB}"
+Someone wants to decide between: "${optionA}" vs "${optionB}"
 
-Food includes: ANY meal, snack, drink, cuisine, dish, or food-related thing from ANY country in the world. Nigerian food, Asian food, African food, Western food — all valid.
+TASK 1 — Validation:
+Are BOTH of these food or drink items? This includes ANY food from ANY country worldwide — Nigerian food, African cuisine, Asian food, Western food, street food, drinks, snacks, anything edible. Answer true or false.
 
-Answer these two questions in JSON format only:
-1. Are both options food/drink related? (true or false)
-2. If you know about these foods, give a one-sentence recommendation on which is better and why. If you don't know enough, return null.
+TASK 2 — Recommendation (only if both are valid food):
+Give a detailed, specific recommendation explaining:
+- Which food is better right now and why
+- Nutritional or taste benefits
+- What mood or situation each suits
+- Keep it under 4 sentences, warm and helpful
 
-Respond with ONLY this JSON, no other text:
-{"valid": true or false, "recommendation": "your recommendation here" or null}`,
+IMPORTANT: If EITHER option is NOT food/drink (e.g. "going to gym", "sleeping", a movie title), set valid to false.
 
-    watch: `You are checking if two options are things to watch, AND optionally giving a recommendation.
+Respond ONLY with this JSON, no markdown, no extra text:
+{"valid": true or false, "recommendation": "detailed recommendation here" or null}`;
 
-Option A: "${optionA}"
-Option B: "${optionB}"
-
-"Things to watch" includes: ANY movie, TV show, series, anime, documentary, YouTube content, sporting event — from ANY country or in ANY language. Nollywood, Bollywood, K-dramas, Hollywood, anime — all valid.
-
-Answer these two questions in JSON format only:
-1. Are both options things to watch? (true or false)
-2. If you know about these titles, give a one-sentence recommendation on which is better and why. If you don't know enough, return null.
-
-Respond with ONLY this JSON, no other text:
-{"valid": true or false, "recommendation": "your recommendation here" or null}`,
-  };
-
-  const prompt = PROMPTS[category];
-  if (!prompt) {
-    return res.status(200).json({ valid: true, recommendation: null });
+    try {
+      const raw    = await callGemini(prompt, process.env.GEMINI_API_KEY);
+      const parsed = safeParseJSON(raw);
+      return res.status(200).json({
+        valid:          parsed.valid !== false,
+        recommendation: parsed.recommendation || null,
+      });
+    } catch {
+      return res.status(200).json({ valid: true, recommendation: null });
+    }
   }
 
+  // Watch validation + recommendation
+  if (category === 'watch') {
+    const vibeContext = vibe ? `Their current mood/vibe: ${vibe}.` : '';
+
+    const prompt = `You are a movie and entertainment expert.
+
+Someone wants to decide between watching: "${optionA}" vs "${optionB}"
+${vibeContext}
+
+TASK 1 — Validation:
+Are BOTH of these things to watch? This includes ANY movie, TV show, series, anime, documentary, K-drama, Nollywood film, Bollywood film, YouTube series, sporting event — from ANY country in ANY language. Answer true or false.
+
+TASK 2 — Recommendation (only if both are valid watch options):
+Give a specific recommendation explaining:
+- Which to watch right now based on their mood/vibe (if provided)
+- What genre, tone, or feeling each has
+- Why one might suit this moment better
+- If you don't recognise a title, say so honestly and recommend based on the name/genre you can infer
+- Keep it under 4 sentences
+
+IMPORTANT: If EITHER option is NOT something to watch (e.g. "pizza", "gym", a food item), set valid to false.
+
+Respond ONLY with this JSON, no markdown, no extra text:
+{"valid": true or false, "recommendation": "detailed recommendation here" or null}`;
+
+    try {
+      const raw    = await callGemini(prompt, process.env.GEMINI_API_KEY);
+      const parsed = safeParseJSON(raw);
+      return res.status(200).json({
+        valid:          parsed.valid !== false,
+        recommendation: parsed.recommendation || null,
+      });
+    } catch {
+      return res.status(200).json({ valid: true, recommendation: null });
+    }
+  }
+
+  return res.status(200).json({ valid: true, recommendation: null });
+}
+
+// ── Helpers ───────────────────────────────────────────────
+async function callGemini(prompt, apiKey) {
+  const r = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+    {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { maxOutputTokens: 200, temperature: 0.4 },
+      }),
+    }
+  );
+  const data = await r.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '{}';
+}
+
+function safeParseJSON(raw) {
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: 100, temperature: 0 },
-        }),
-      }
-    );
-
-    const data = await response.json();
-    const raw  = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '{}';
-
-    // Strip markdown code fences if Gemini wraps in them
     const clean = raw.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(clean);
-
-    return res.status(200).json({
-      valid:          parsed.valid !== false,
-      recommendation: parsed.recommendation || null,
-    });
-
-  } catch (err) {
-    console.error('Validate error:', err);
-    // If AI fails, let them through — never block users
-    return res.status(200).json({ valid: true, recommendation: null });
+    return JSON.parse(clean);
+  } catch {
+    return { valid: true, recommendation: null };
   }
 }

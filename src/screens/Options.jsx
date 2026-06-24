@@ -25,58 +25,100 @@ export default function Options({ go, category }) {
     if (!optA.trim()) { setError('Please fill in Option A'); return; }
     if (!optB.trim()) { setError('Please fill in Option B'); return; }
     if (optA.trim().toLowerCase() === optB.trim().toLowerCase()) {
-      setError("Both options are the same — enter two different things!");
-      return;
+      setError("Both options are the same — enter two different things!"); return;
     }
 
-    // General — no validation needed
     if (category === 'general') {
-      go(2, optA.trim(), optB.trim());
+      if (wantRec) {
+        setLoading(true);
+        try {
+          const r = await fetch('/api/validate', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              optionA: optA.trim(),
+              optionB: optB.trim(),
+              category: 'general',
+              wantRecommendation: true,
+            }),
+          });
+          const data = await r.json();
+          if (data.recommendation) {
+            setRecommendation(data.recommendation);
+            setLoading(false);
+            return;
+          }
+        } catch { /* fall through */ }
+        setLoading(false);
+      }
+      go(2, optA.trim(), optB.trim(), undefined, undefined, null);
       return;
     }
 
     setLoading(true);
 
     try {
-      const response = await fetch('/api/validate', {
+      const r = await fetch('/api/validate', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          optionA: optA.trim(),
-          optionB: optB.trim(),
+          optionA:            optA.trim(),
+          optionB:            optB.trim(),
           category,
+          wantRecommendation: wantRec,
         }),
       });
-
-      const data = await response.json();
+      const data = await r.json();
 
       if (!data.valid) {
+        const examples = {
+          food:  `"${cat.placeholderA}" vs "${cat.placeholderB}"`,
+          watch: `"${cat.placeholderA}" vs "${cat.placeholderB}"`,
+        };
         setError(
-          `These don't look like ${cat.label} options. Try something like "${cat.placeholderA}" vs "${cat.placeholderB}".`
+          `These don't look like ${cat.label} options. Try something like ${examples[category] || 'valid options'}.`
         );
         setLoading(false);
         return;
       }
 
-      // If user asked for recommendation and AI has one, show it
       if (wantRec && data.recommendation) {
         setRecommendation(data.recommendation);
         setLoading(false);
-        return; // Stay on screen so they can read it
+        return;
       }
 
-    } catch (err) {
-      console.warn('Validation skipped:', err);
+      setLoading(false);
+      // Pass recommendation (null if none) so Reveal can use it
+      go(2, optA.trim(), optB.trim(), undefined, undefined, null);
+
+    } catch {
+      setLoading(false);
+      go(2, optA.trim(), optB.trim(), undefined, undefined, null);
     }
-
-    setLoading(false);
-    go(2, optA.trim(), optB.trim());
   }
 
-  function proceedAnyway() {
+  function proceedWithRec() {
+    // Pass the recommendation into the decision flow
+    go(2, optA.trim(), optB.trim(), undefined, undefined, recommendation);
+  }
+
+  function proceedWithoutRec() {
     setRecommendation(null);
-    go(2, optA.trim(), optB.trim());
+    go(2, optA.trim(), optB.trim(), undefined, undefined, null);
   }
+
+  const recLabel = {
+    food:    '✨ Give me a food recommendation first',
+    watch:   '✨ Recommend which I should watch based on my vibe',
+    general: '✨ Get an AI recommendation before we decide',
+  };
+
+  const recDesc = {
+    food:    'AI will explain which food suits your mood better',
+    watch:   'AI will recommend based on mood and what you want to feel',
+    general: 'AI will suggest which option is better for your situation',
+  };
 
   return (
     <div style={{
@@ -86,10 +128,8 @@ export default function Options({ go, category }) {
     }}>
 
       <div>
-        <p style={{
-          fontSize: 11, fontWeight: 700, letterSpacing: '0.12em',
-          color: C.muted, margin: '0 0 6px',
-        }}>
+        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em',
+          color: C.muted, margin: '0 0 6px' }}>
           {cat.emoji} {cat.label.toUpperCase()} · DECIDE IN 30s
         </p>
         <h1 style={{ fontSize: 26, fontWeight: 900, color: C.text, margin: 0, lineHeight: 1.2 }}>
@@ -101,20 +141,15 @@ export default function Options({ go, category }) {
       </div>
 
       {/* Option A */}
-      <div style={{
-        background: C.glass, border: `1px solid ${C.glassBdr}`,
-        borderRadius: 16, padding: '16px',
-      }}>
+      <div style={{ background: C.glass, border: `1px solid ${C.glassBdr}`,
+        borderRadius: 16, padding: '16px' }}>
         <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em',
           color: C.muted, margin: '0 0 10px' }}>OPTION A</p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: 28 }}>{cat.emoji}</span>
-          <input
-            value={optA}
+          <input value={optA}
             onChange={e => { setOptA(e.target.value); setError(''); setRecommendation(null); }}
-            placeholder={cat.placeholderA}
-            style={inputStyle}
-          />
+            placeholder={cat.placeholderA} style={inputStyle} />
         </div>
       </div>
 
@@ -131,62 +166,51 @@ export default function Options({ go, category }) {
       </div>
 
       {/* Option B */}
-      <div style={{
-        background: C.glass, border: `1px solid ${C.glassBdr}`,
-        borderRadius: 16, padding: '16px',
-      }}>
+      <div style={{ background: C.glass, border: `1px solid ${C.glassBdr}`,
+        borderRadius: 16, padding: '16px' }}>
         <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em',
           color: C.muted, margin: '0 0 10px' }}>OPTION B</p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: 28 }}>{cat.emoji}</span>
-          <input
-            value={optB}
+          <input value={optB}
             onChange={e => { setOptB(e.target.value); setError(''); setRecommendation(null); }}
-            placeholder={cat.placeholderB}
-            style={inputStyle}
-          />
+            placeholder={cat.placeholderB} style={inputStyle} />
         </div>
       </div>
 
-      {/* Want AI recommendation checkbox — only for food and watch */}
-      {category !== 'general' && (
-        <button
-          onClick={() => setWantRec(w => !w)}
-          style={{
-            background: wantRec ? 'rgba(139,92,246,0.15)' : C.glass,
-            border: `1px solid ${wantRec ? 'rgba(139,92,246,0.4)' : C.glassBdr}`,
-            borderRadius: 12, padding: '12px 16px',
-            display: 'flex', alignItems: 'center', gap: 10,
-            cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
-          }}
-        >
-          <div style={{
-            width: 22, height: 22, borderRadius: 6,
-            background: wantRec ? gr() : 'rgba(255,255,255,0.1)',
-            border: `2px solid ${wantRec ? 'transparent' : C.glassBdr}`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0, transition: 'all 0.15s',
-          }}>
-            {wantRec && <span style={{ fontSize: 12, color: 'white' }}>✓</span>}
+      {/* AI Recommendation checkbox */}
+      <button onClick={() => setWantRec(w => !w)} style={{
+        background: wantRec ? 'rgba(139,92,246,0.12)' : C.glass,
+        border: `1px solid ${wantRec ? 'rgba(139,92,246,0.4)' : C.glassBdr}`,
+        borderRadius: 14, padding: '13px 16px',
+        display: 'flex', alignItems: 'center', gap: 12,
+        cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
+        transition: 'all 0.15s',
+      }}>
+        <div style={{
+          width: 22, height: 22, borderRadius: 6, flexShrink: 0,
+          background: wantRec ? gr() : 'rgba(255,255,255,0.1)',
+          border: `2px solid ${wantRec ? 'transparent' : C.glassBdr}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          transition: 'all 0.15s',
+        }}>
+          {wantRec && <span style={{ fontSize: 12, color: 'white', fontWeight: 800 }}>✓</span>}
+        </div>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'white' }}>
+            {recLabel[category] || recLabel.general}
           </div>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: 'white' }}>
-              ✨ Give me a recommendation first
-            </div>
-            <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>
-              AI will suggest which option is better before deciding
-            </div>
+          <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>
+            {recDesc[category] || recDesc.general}
           </div>
-        </button>
-      )}
+        </div>
+      </button>
 
       {/* Error */}
       {error && (
-        <div style={{
-          background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+        <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
           borderRadius: 12, padding: '12px 14px',
-          display: 'flex', alignItems: 'flex-start', gap: 8,
-        }}>
+          display: 'flex', alignItems: 'flex-start', gap: 8 }}>
           <span style={{ fontSize: 16, flexShrink: 0 }}>⚠️</span>
           <span style={{ fontSize: 13, color: '#FCA5A5', fontWeight: 600, lineHeight: 1.4 }}>
             {error}
@@ -194,56 +218,54 @@ export default function Options({ go, category }) {
         </div>
       )}
 
-      {/* AI Recommendation card */}
+      {/* AI Recommendation result */}
       {recommendation && (
         <div style={{
-          background: 'rgba(139,92,246,0.12)',
-          border: '1px solid rgba(139,92,246,0.35)',
-          borderRadius: 16, padding: '16px 18px',
+          background: 'rgba(139,92,246,0.1)',
+          border: '1px solid rgba(139,92,246,0.4)',
+          borderRadius: 18, padding: '18px 20px',
           animation: 'slideUp 0.35s ease',
         }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em',
-            color: C.grape, marginBottom: 8 }}>
+            color: C.grape, marginBottom: 10 }}>
             ✨ AI RECOMMENDATION
           </div>
-          <p style={{ fontSize: 14, color: 'white', margin: '0 0 14px', lineHeight: 1.55 }}>
+          <p style={{ fontSize: 14, color: 'white', margin: '0 0 16px', lineHeight: 1.65 }}>
             {recommendation}
           </p>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={proceedAnyway} style={{
-              flex: 1, background: gr(), border: 'none', borderRadius: 10,
-              padding: '10px', color: 'white', fontSize: 13,
+            <button onClick={proceedWithRec} style={{
+              flex: 1, background: gr(), border: 'none', borderRadius: 12,
+              padding: '12px', color: 'white', fontSize: 13,
               fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
             }}>
-              Still let the app decide
+              Still let the app decide 🎲
             </button>
-            <button onClick={() => setRecommendation(null)} style={{
+            <button onClick={proceedWithoutRec} style={{
               flex: 1, background: C.glass, border: `1px solid ${C.glassBdr}`,
-              borderRadius: 10, padding: '10px', color: 'white', fontSize: 13,
+              borderRadius: 12, padding: '12px', color: 'white', fontSize: 13,
               fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
             }}>
-              Change my options
+              Change options
             </button>
           </div>
         </div>
       )}
 
       <div style={{ marginTop: 'auto' }}>
-        <button
-          onClick={handleContinue}
-          disabled={loading}
-          style={{
-            background: gr(), border: 'none', borderRadius: 14,
-            padding: '17px', color: 'white', fontSize: 15,
-            fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer',
-            width: '100%', letterSpacing: '0.03em',
-            fontFamily: 'inherit', opacity: loading ? 0.7 : 1,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          }}
-        >
+        <button onClick={handleContinue} disabled={loading} style={{
+          background: gr(), border: 'none', borderRadius: 14,
+          padding: '17px', color: 'white', fontSize: 15,
+          fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer',
+          width: '100%', letterSpacing: '0.03em',
+          fontFamily: 'inherit', opacity: loading ? 0.7 : 1,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+        }}>
           {loading ? (
             <>
-              <span style={{ fontSize: 13 }}>Checking...</span>
+              <span style={{ fontSize: 13 }}>
+                {wantRec ? 'Getting recommendation...' : 'Checking...'}
+              </span>
               {[0,1,2].map(i => (
                 <div key={i} style={{
                   width: 5, height: 5, borderRadius: '50%',
