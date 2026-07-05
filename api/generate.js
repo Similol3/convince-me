@@ -21,8 +21,9 @@ export default async function handler(req, res) {
     pastImage,
   } = req.body;
 
+  // ── Audience descriptions ─────────────────────────────
   const AUDIENCE_DESC = {
-    friend:    "a close friend they know well and are comfortable with",
+    friend:    "a close friend they know well and are very comfortable with",
     crush:     "someone they have a crush on — be confident and naturally charming, not desperate or cringe",
     partner:   "their romantic partner / boyfriend / girlfriend / bae",
     family:    "a family member — warm and appropriate",
@@ -30,45 +31,94 @@ export default async function handler(req, res) {
     colleague: "a work colleague or classmate — professional but still friendly",
     group:     "a group chat with several people — make it inclusive and fun",
     ex:        "their ex — respectful, warm but not desperate or clingy",
+    online:    "someone they met online — friendly, curious, not too forward",
+    other:     "someone in their life — keep the tone warm and appropriate",
   };
 
+  // ── Tone descriptions ─────────────────────────────────
   const TONE_DESC = {
-    casual:     "Completely relaxed and natural, like texting a close mate. Everyday language, no formality at all.",
-    romantic:   "Warm, heartfelt and genuinely sweet. Show real interest. Playful but sincere — not cringe or try-hard. Make it feel special.",
-    funny:      "Playful and humorous. A witty observation or light joke that fits naturally. Make them laugh or at least smile.",
-    uk_slang:   "Authentic British/UK street talk — words like \"fam\", \"innit\", \"bare\", \"peng\", \"wagwan\", \"you good\", \"mandem\", \"no cap\", \"it's giving\", \"bruv\", \"allow it\", \"on ones\" used naturally where they fit. NOT forced.",
-    supportive: "Warm, empathetic and genuinely caring. Acknowledge their feelings first before anything else. No preaching or empty positivity.",
-    formal:     "Polite, respectful and clear. Slightly professional — good for people they want to impress or don't know well.",
-    flirty:     "Playful, confident and lightly flirtatious. Keep them interested without being overwhelming. A little mystery goes a long way.",
-    hype:       "High energy, enthusiastic and full of personality. The kind of message that immediately makes someone smile or feel good.",
+    casual:      "Completely relaxed and natural, like texting a close mate. Everyday language, no formality at all.",
+    romantic:    "Warm, heartfelt and genuinely sweet. Show real interest. Playful but sincere — not cringe or try-hard. Make it feel special.",
+    funny:       "Playful and humorous. A witty observation or light joke that fits naturally. Make them laugh or at least smile.",
+    uk_slang:    "Authentic British/UK street talk — words like \"fam\", \"innit\", \"bare\", \"peng\", \"wagwan\", \"you good\", \"mandem\", \"no cap\", \"it's giving\", \"bruv\", \"allow it\", \"on ones\" used naturally where they fit. NOT forced.",
+    supportive:  "Warm, empathetic and genuinely caring. Acknowledge their feelings first before anything else. No preaching or empty positivity.",
+    formal:      "Polite, respectful and clear. Slightly professional — good for people they want to impress or don't know well.",
+    flirty:      "Playful, confident and lightly flirtatious. Keep them interested without being overwhelming. A little mystery goes a long way.",
+    hype:        "High energy, enthusiastic and full of personality. The kind of message that immediately makes someone smile or feel good.",
+    short:       "Very short and direct — one or two punchy sentences max. No filler, no fluff. Gets straight to the point.",
+    real_talk:   "Honest and direct. No sugarcoating but still respectful. Say what actually needs to be said.",
+    soft:        "Gentle, tender and sweet. Soft energy — careful with their feelings, warm without being overwhelming.",
+    apologetic:  "Sincere and humble. Takes responsibility without overdoing it. Genuine, not dramatic.",
+    // Post vibes
+    hyped:       "Big energy and enthusiastic. Show real excitement and hype them up.",
+    curious:     "Genuinely curious and interested. Ask about the detail or story behind it.",
+    impressed:   "Genuinely impressed. Notice a specific detail and react to it authentically.",
+    sweet:       "Warm, genuine and sweet. A heartfelt reaction that feels real.",
+    // Chat openers
+    smooth:      "Confident and smooth. Natural, not try-hard. The kind of opener that lands well.",
+    compliment:  "Lead with a specific, genuine compliment that feels personal not generic.",
+    check_in:    "Relaxed and casual. A low-pressure check-in that doesn't feel forced.",
+    reconnect:   "Warm but natural. Acknowledge the time apart without making it awkward.",
+    invite:      "Confident and direct. A bold invite that feels genuine not desperate.",
+    // Reply styles
+    comfort:     "Comforting and supportive. Acknowledge what they're going through first. Presence over advice.",
+    bad_day:     "Empathetic and caring. They're having a hard time — acknowledge that genuinely.",
+    good_news:   "Match their excited energy. Celebrate with them genuinely.",
+    miss_you:    "Warm and genuine. Acknowledge the feeling without overdoing it.",
+    conflict:    "Calm and mature. De-escalate without being dismissive of either side.",
+    flirting:    "Playful and confident. Match their flirty energy without coming on too strong.",
+    asking:      "Thoughtful and direct. Give a real answer that continues the conversation.",
+    apologised:  "Warm and gracious. Accept genuinely without making them feel worse.",
   };
 
+  // ── Purpose descriptions ──────────────────────────────
   const PURPOSE_DESC = {
-    check_in:   "Just checking in on them and seeing how they are doing — natural, not forced",
-    compliment: "Giving them a genuine compliment that feels specific and real, not generic",
-    apologize:  "Apologising for something sincerely — own it without being overly dramatic",
-    interest:   "Showing interest in them as a person and keeping the conversation going naturally",
-    comfort:    "Comforting or supporting them through something difficult — presence over advice",
+    check_in:   "Just checking in on them naturally — not forced",
+    compliment: "Giving them a genuine, specific compliment that feels real",
+    apologize:  "Apologising sincerely — own it without being overdramatic",
+    interest:   "Showing genuine interest in them and keeping the conversation going",
+    comfort:    "Comforting or supporting them — presence over advice",
     invite:     "Inviting them somewhere or suggesting they hang out — confident not desperate",
     reconnect:  "Reconnecting after not talking for a while — natural, no awkward energy",
     respond:    "Replying directly and thoughtfully to what they said",
+    react:      "Reacting authentically to what they posted",
+    smooth:     "Opening smoothly and confidently",
+    funny:      "Making them laugh or smile with a light, witty opener",
+    // Message situations
+    bad_day:    "They're going through something hard — acknowledge it genuinely and be there for them",
+    good_news:  "They shared good news — celebrate with them and match their energy",
+    miss_you:   "They said they miss you — respond with warmth and genuine feeling",
+    conflict:   "There's tension — be calm, mature and de-escalate without being dismissive",
+    flirting:   "They're flirting — match their playful energy confidently",
+    casual:     "Normal casual conversation — keep it natural and light",
+    asking:     "They asked you something — give a real, thoughtful answer",
+    apologised: "They apologised — respond with warmth and grace",
   };
 
-  const nameLine    = personName   ? `Their name is ${personName}.`                    : "";
-  const handleLine  = personHandle ? `Their social media handle is @${personHandle}.`  : "";
+  const nameLine     = personName   ? `Their name is ${personName}.`                   : "";
+  const handleLine   = personHandle ? `Their handle is @${personHandle}.`              : "";
   const audienceLine = AUDIENCE_DESC[audience] || AUDIENCE_DESC.friend;
   const toneLine     = TONE_DESC[tone]         || TONE_DESC.casual;
   const purposeLine  = PURPOSE_DESC[purpose]   || "Send a message that feels natural and genuine";
 
-  // Build past conversation section — FIXED variable name
+  // ── Past conversation context ─────────────────────────
   let pastSection = "";
   if (pastMessages && pastMessages.trim().length > 5) {
-    pastSection = `\n\nPREVIOUS CONVERSATION HISTORY:\n---\n${pastMessages.trim()}\n---\nMatch the tone already established. Reference things already discussed naturally.`;
+    pastSection = `
+
+PREVIOUS CONVERSATION HISTORY — read this carefully:
+---
+${pastMessages.trim()}
+---
+Study the tone, dynamic, and what's already been said. Match the established vibe. Reference previous things naturally if it fits. Never repeat what was already said.`;
   }
   if (pastImage) {
-    pastSection += "\n\nThe user has also uploaded a screenshot of their conversation. Use it to understand the dynamic, tone, and context between them.";
+    pastSection += `
+
+The user has also uploaded a screenshot of their conversation. Use it to understand the relationship dynamic, tone, and context between them.`;
   }
 
+  // ── Build prompt by situation ─────────────────────────
   let promptText = "";
 
   if (situationId === "reply_story") {
@@ -76,87 +126,91 @@ export default async function handler(req, res) {
 
 WHO they're messaging: ${audienceLine}
 ${nameLine} ${handleLine}
+REACTION VIBE: ${toneLine}
 GOAL: ${purposeLine}
-TONE: ${toneLine}
-${context ? `WHAT THE STORY IS ABOUT (user's description): "${context}"` : "No description given — reply based on what you see in the image."}
+${context ? `WHAT THE POST IS ABOUT: "${context}"` : "No description — reply based on what you see in the image."}
 ${pastSection}
 
-${image ? "Look at the image carefully. Understand the mood, place, activity, or emotion it shows." : ""}
+${image ? "Look at the image carefully. Understand the mood, place, activity, or emotion shown." : ""}
 
 Write a reply that:
-— Responds directly and specifically to this story/post, not generically
-— Feels like something a real human would actually send, not an AI
-— Matches the tone, audience, and purpose above exactly
-— If there is conversation history, stays consistent with how they already talk to each other
-— Uses ${personName ? personName + "'s name naturally if it fits" : "their name if you know it"}
+— Responds directly and specifically to this post — not a generic reaction
+— Sounds like something a real person would actually send
+— Matches the reaction vibe and relationship type exactly
+— If there is conversation history, stays consistent with how they already talk
+${personName ? `— Use ${personName}'s name naturally if it fits` : ""}
 
-Write 1 to 3 sentences max. Natural length — not cut short, not too long. Return ONLY the message. No quotes around it. No explanation.`;
+Write as many sentences as naturally fits — usually 1 to 3. Never cut a thought short. Never end mid-sentence. Return ONLY the message text. No quotes. No explanation.`;
 
   } else if (situationId === "start_chat") {
-    promptText = `The user wants to start a conversation with someone from scratch.
+    promptText = `The user wants to start a conversation with someone for the first time (or after a long time).
 
 WHO they're messaging: ${audienceLine}
 ${nameLine} ${handleLine}
+OPENER STYLE: ${toneLine}
 GOAL: ${purposeLine}
-TONE: ${toneLine}
-${context ? `BACKGROUND CONTEXT: "${context}"` : "No background — create a natural opener that could work for anyone."}
+${context ? `BACKGROUND / CONTEXT: "${context}"` : "No background — create a natural opener that works."}
 ${pastSection}
 
 Write a conversation opener that:
-— Feels completely natural and human, not copy-paste generic
-— Fits the tone and relationship type exactly
+— Feels completely natural and human — not copy-paste or AI-sounding
+— Fits the opener style and relationship exactly
 — If context was given, references it specifically so it feels personal
-— If they have a handle or name, use it naturally if it fits
+— If they have a name or handle, use it naturally if it fits
 — Is the kind of message that actually gets a reply
 
-Write 1 to 3 sentences. Return ONLY the message. No quotes. No explanation.`;
+Write as many sentences as the opener naturally needs. Never end mid-sentence. Return ONLY the message. No quotes. No explanation.`;
 
   } else {
+    // reply_text
     promptText = `The user wants to reply to a message they received.
 
-WHO sent the message: ${audienceLine}
+WHO sent it: ${audienceLine}
 ${nameLine} ${handleLine}
 WHAT THEY SAID: "${context}"
-GOAL: ${purposeLine}
-TONE: ${toneLine}
+THE SITUATION: ${purposeLine}
+REPLY STYLE: ${toneLine}
 ${pastSection}
 
-Read everything carefully. Understand the full picture:
+MOST IMPORTANT — read what they said and understand the full emotional weight:
 
-EMOTIONAL READING — This is the most important part:
-— If they said something difficult, vulnerable, sad, or stressful (failed something, got in trouble, feeling low, had a bad day, stressed out) — FIRST acknowledge that feeling specifically. Show you actually understood what they said. Then respond with genuine care. DO NOT be randomly cheerful. DO NOT give empty positive quotes. Be a real human who actually listened.
-— If they said something exciting, happy, or achieved something — genuinely celebrate with them, match their energy
-— If they're asking something or being curious — give a real thoughtful answer that continues the conversation
-— If it's casual and chill — keep it light and natural
-— If they need an apology — be sincere, specific, and not overdone
+— If it's difficult, sad, stressful or vulnerable (bad day, venting, feeling low, stressed, got in trouble, struggling) — FIRST genuinely acknowledge that specific feeling. Show you actually understood what they said. Be a real person who listened and cares. Do NOT be randomly cheerful. Do NOT use generic positive quotes. Be human.
+— If it's exciting or happy — genuinely match that energy, celebrate with them
+— If they're flirting — match their confidence and energy playfully
+— If it's an apology — be warm and gracious without overdoing it
+— If they asked something — give a real, thoughtful answer that continues the conversation
+— If it's casual — keep it light, natural, and easy
 
-THEN layer the requested tone/style naturally on top of that emotional read.
+THEN apply the requested reply style naturally on top of the emotional read.
 
-If there is conversation history — read it carefully and stay consistent with the established dynamic between them. Build on previous things mentioned. Reference specific things they talked about if it's natural.
+If there is conversation history — stay consistent with the established dynamic. Build on what's already been said. Reference specific things if it's natural. Never repeat what was already said.
 
-If you know their name, use it once if it fits naturally.
+${personName ? `Use ${personName}'s name once if it fits naturally.` : ""}
 
-Write a complete, genuine reply — 1 to 4 sentences depending on what the situation needs. Don't cut it short artificially. Return ONLY the message. No quotes around it. No explanation or preamble.`;
+Write a complete, genuine reply. Use as many sentences as the situation genuinely needs — don't cut it short. A supportive or emotional reply might need 4 to 6 sentences. A casual reply might only need 1 to 2. Match the length to what actually feels right. Never end mid-sentence. Never leave a thought unfinished.
+
+Return ONLY the message text. No quotes around it. No explanation or preamble.`;
   }
 
+  // ── Call Gemini ───────────────────────────────────────
   try {
     const parts = [];
 
-    // Add past chat screenshot first (context comes before the main prompt)
+    // Past chat screenshot first (context before prompt)
     if (pastImage) {
       const pastBase64 = pastImage.split(",")[1];
       const pastMime   = pastImage.split(";")[0].split(":")[1];
       parts.push({ inline_data: { mime_type: pastMime, data: pastBase64 } });
     }
 
-    // Add story image if replying to a story
+    // Story/post image
     if (image && situationId === "reply_story") {
       const base64Data = image.split(",")[1];
       const mimeType   = image.split(";")[0].split(":")[1];
       parts.push({ inline_data: { mime_type: mimeType, data: base64Data } });
     }
 
-    // Main prompt text always last
+    // Prompt always last
     parts.push({ text: promptText });
 
     const response = await fetch(
@@ -167,8 +221,8 @@ Write a complete, genuine reply — 1 to 4 sentences depending on what the situa
         body: JSON.stringify({
           contents: [{ parts }],
           generationConfig: {
-            maxOutputTokens: 500,
-            temperature:     1.05,
+            maxOutputTokens: 1000,
+            temperature:     1.0,
             topP:            0.95,
             topK:            40,
           },
@@ -184,6 +238,12 @@ Write a complete, genuine reply — 1 to 4 sentences depending on what the situa
     }
 
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+
+    if (!text) {
+      console.error("Empty response from Gemini");
+      return res.status(500).json({ error: "Empty response from AI" });
+    }
+
     return res.status(200).json({ message: text });
 
   } catch (err) {
