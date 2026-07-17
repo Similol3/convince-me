@@ -26,8 +26,8 @@ import Profile from "./screens/Profile";
 import Connect from "./screens/Connect";
 import Upgrade from "./screens/Upgrade";
 import Leaderboard from "./screens/Leaderboard";
-import { isDecisionLimitReached, incrementDecisionCount, getTodayDecisionCount, updateStreak, scheduleStreakReminder } from './lib/decisions';
-import { promptNotifications, scheduleStreakReminder } from './lib/notifications';
+import { isDecisionLimitReached, incrementDecisionCount, getTodayDecisionCount, updateStreak} from './lib/decisions';
+import { promptNotifications, scheduleStreakReminder as scheduleReminder } from './lib/notifications';
 import ProAd from './screens/ProAd';
 import InstallBanner from './components/InstallBanner';
 
