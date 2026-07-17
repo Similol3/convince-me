@@ -26,12 +26,17 @@ import Profile from "./screens/Profile";
 import Connect from "./screens/Connect";
 import Upgrade from "./screens/Upgrade";
 import Leaderboard from "./screens/Leaderboard";
+import { isDecisionLimitReached, incrementDecisionCount, getTodayDecisionCount, updateStreak, scheduleStreakReminder } from './lib/decisions';
+import { promptNotifications, scheduleStreakReminder } from './lib/notifications';
+import ProAd from './screens/ProAd';
+import InstallBanner from './components/InstallBanner';
 
 export default function App() {
   const [session, setSession] = useState(null);
   const [authReady, setAuthReady] = useState(false);
   const [authModal, setAuthModal] = useState(null); // null | 'login' | 'signup' | 'forgot'
   const [showProSuccess, setShowProSuccess] = useState(false);
+  const [showProAd, setShowProAd] = useState(false);
 
   const [screen, setScreen] = useState(0);
   const [optA, setOptA] = useState("");
@@ -94,6 +99,9 @@ export default function App() {
           if (profile) {
             setUser(profile);
             setAvatar(profile.avatar || "🎲");
+          
+            scheduleReminder(profile.streak || 0);
+            setTimeout(() => promptNotifications(), 3000);
           }
           setShowProSuccess(true);
         });
@@ -107,6 +115,14 @@ export default function App() {
 
   // ── Navigation ─────────────────────────────────────────
   const go = (n, a, b, ans, cat, rec) => {
+    // Check decision limit when starting a new decision
+    if (n === 1 && !user?.is_pro) {
+      if (isDecisionLimitReached(user?.is_pro)) {
+        setShowProAd(true);
+        return;
+      }
+    }
+  
     if (a !== undefined) setOptA(a);
     if (b !== undefined) setOptB(b);
     if (ans !== undefined) setAnswers(ans);
@@ -125,7 +141,10 @@ export default function App() {
 
   function handleDecided(result) {
     setLastResult(result);
-
+  
+    // Track today's decision
+    incrementDecisionCount();
+  
     // Update guest XP locally
     if (user?.is_guest) {
       const updated = updateGuestUser({
@@ -133,6 +152,9 @@ export default function App() {
         total_decisions: (user.total_decisions || 0) + 1,
       });
       setUser(updated);
+    } else if (user) {
+      // Update streak for logged-in users
+      updateStreak(user, supabase);
     }
   }
 
@@ -259,6 +281,16 @@ export default function App() {
           />
         )}
 
+       {showProAd && (
+  <ProAd
+    decisionsUsed={getTodayDecisionCount()}
+    onUpgrade={() => {
+      setShowProAd(false);
+      go(13);
+    }}
+    onDismiss={() => setShowProAd(false)}
+  />
+)}
         {/* Auth Modal overlay */}
         {authModal && (
           <div
@@ -385,8 +417,8 @@ export default function App() {
 
           {screen === 14 && <Leaderboard user={user} />}
         </div>
-
-        <BottomNav active={navActive} setActive={handleNav} />
+        <InstallBanner />
+<BottomNav active={navActive} setActive={handleNav} />
       </div>
     </div>
   );

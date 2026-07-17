@@ -1,21 +1,49 @@
 {
-    "name": "Convince Me",
-    "short_name": "Convince Me",
-    "description": "Can't decide? Let us decide for you.",
-    "start_url": "/",
-    "display": "standalone",
-    "background_color": "#0A0A14",
-    "theme_color": "#8B35CC",
-    "icons": [
-      {
-        "src": "/icon-192.png",
-        "sizes": "192x192",
-        "type": "image/png"
-      },
-      {
-        "src": "/icon-512.png",
-        "sizes": "512x512",
-        "type": "image/png"
-      }
-    ]
-  }
+  "name": "Convince Me",
+  "short_name": "Convince Me",
+  "description": "Make decisions in 30 seconds. AI-powered messaging. Never be stuck again.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#08080F",
+  "theme_color": "#8B5CF6",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "categories": ["lifestyle", "utilities", "social"],
+  "shortcuts": [
+    {
+      "name": "Make a Decision",
+      "short_name": "Decide",
+      "description": "Start a new decision",
+      "url": "/?action=decide",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Connect",
+      "short_name": "Connect",
+      "description": "Get AI help with a message",
+      "url": "/?action=connect",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

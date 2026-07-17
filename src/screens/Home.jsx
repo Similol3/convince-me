@@ -1,7 +1,14 @@
-import { C, gr } from "../tokens";
+import { C, gr, grGold } from "../tokens";
+import {
+  getTodayDecisionCount,
+  FREE_DAILY_LIMIT,
+  getRemainingDecisions,
+} from "../lib/decisions";
 
 export default function Home({ go, user }) {
   const isPro = user?.is_pro || false;
+  const remaining = getRemainingDecisions(isPro);
+  const usedToday = getTodayDecisionCount();
 
   return (
     <div
@@ -69,7 +76,99 @@ export default function Home({ go, user }) {
           </span>
         </button>
       )}
+{/* Decision battery */}
+{!isPro && (
+  <div
+    style={{
+      background: C.glass,
+      border: `1px solid ${C.glassBdr}`,
+      borderRadius: 16,
+      padding: "14px 16px",
+      display: "flex",
+      alignItems: "center",
+      gap: 12,
+    }}
+  >
+    <div style={{ flex: 1 }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginBottom: 6,
+        }}
+      >
+        <span
+          style={{
+            fontSize: 12,
+            fontWeight: 700,
+            color: "white",
+          }}
+        >
+          ⚡ Daily Decisions
+        </span>
 
+        <span
+          style={{
+            fontSize: 12,
+            fontWeight: 700,
+            color:
+              remaining === 0
+                ? C.red
+                : remaining === 1
+                ? C.gold
+                : C.emerald,
+          }}
+        >
+          {remaining}/{FREE_DAILY_LIMIT} left
+        </span>
+      </div>
+
+      <div
+        style={{
+          height: 6,
+          background: "rgba(255,255,255,0.08)",
+          borderRadius: 3,
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            height: "100%",
+            borderRadius: 3,
+            width: `${(remaining / FREE_DAILY_LIMIT) * 100}%`,
+            background:
+              remaining === 0
+                ? C.red
+                : remaining === 1
+                ? C.gold
+                : C.emerald,
+            transition: "width 0.4s ease",
+          }}
+        />
+      </div>
+    </div>
+
+    {remaining === 0 && (
+      <button
+        onClick={() => go(13)}
+        style={{
+          background: grGold(),
+          border: "none",
+          borderRadius: 10,
+          padding: "8px 12px",
+          color: "#1A1208",
+          fontSize: 11,
+          fontWeight: 800,
+          cursor: "pointer",
+          fontFamily: "inherit",
+          flexShrink: 0,
+        }}
+      >
+        Go Pro
+      </button>
+    )}
+  </div>
+)}
       <button
         onClick={() => go(1, undefined, undefined, undefined, "general")}
         style={{
