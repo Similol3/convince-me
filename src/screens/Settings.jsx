@@ -573,6 +573,29 @@ export default function Settings({ user, onSignOut }) {
         </div>
       )}{" "}
       <button
+        onClick={() => go(15)}
+        style={{
+          background: C.glass,
+          border: `1px solid ${C.glassBdr}`,
+          borderRadius: 16,
+          padding: "16px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          cursor: "pointer",
+          width: "100%",
+          fontFamily: "inherit",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ fontSize: 20 }}>🤝</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "white" }}>
+            Help & Support
+          </span>
+        </div>
+        <span style={{ color: C.muted, fontSize: 16 }}>›</span>
+      </button>
+      <button
         onClick={onSignOut}
         style={{
           background: "rgba(239,68,68,0.1)",

@@ -26,10 +26,19 @@ import Profile from "./screens/Profile";
 import Connect from "./screens/Connect";
 import Upgrade from "./screens/Upgrade";
 import Leaderboard from "./screens/Leaderboard";
-import { isDecisionLimitReached, incrementDecisionCount, getTodayDecisionCount, updateStreak} from './lib/decisions';
-import { promptNotifications, scheduleStreakReminder as scheduleReminder } from './lib/notifications';
-import ProAd from './screens/ProAd';
-import InstallBanner from './components/InstallBanner';
+import {
+  isDecisionLimitReached,
+  incrementDecisionCount,
+  getTodayDecisionCount,
+  updateStreak,
+} from "./lib/decisions";
+import {
+  promptNotifications,
+  scheduleStreakReminder as scheduleReminder,
+} from "./lib/notifications";
+import ProAd from "./screens/ProAd";
+import InstallBanner from "./components/InstallBanner";
+import Support from "./screens/Support";
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -99,7 +108,7 @@ export default function App() {
           if (profile) {
             setUser(profile);
             setAvatar(profile.avatar || "🎲");
-          
+
             scheduleReminder(profile.streak || 0);
             setTimeout(() => promptNotifications(), 3000);
           }
@@ -122,7 +131,7 @@ export default function App() {
         return;
       }
     }
-  
+
     if (a !== undefined) setOptA(a);
     if (b !== undefined) setOptB(b);
     if (ans !== undefined) setAnswers(ans);
@@ -139,22 +148,34 @@ export default function App() {
     if (i === 3) go(8);
   };
 
-  function handleDecided(result) {
+  async function handleDecided(result) {
     setLastResult(result);
-  
-    // Track today's decision
     incrementDecisionCount();
-  
-    // Update guest XP locally
+
     if (user?.is_guest) {
       const updated = updateGuestUser({
         xp: (user.xp || 0) + 10,
         total_decisions: (user.total_decisions || 0) + 1,
       });
       setUser(updated);
-    } else if (user) {
-      // Update streak for logged-in users
-      updateStreak(user, supabase);
+    } else if (user?.id) {
+      const newStreak = await updateStreak(user.id);
+      if (newStreak !== null) {
+        setUser((prev) => ({
+          ...prev,
+          streak: newStreak,
+          last_streak_date: new Date().toISOString().split("T")[0],
+          total_decisions: (prev?.total_decisions || 0) + 1,
+          xp: (prev?.xp || 0) + 10,
+        }));
+      }
+      await supabase
+        .from("users")
+        .update({
+          xp: (user.xp || 0) + 10,
+          total_decisions: (user.total_decisions || 0) + 1,
+        })
+        .eq("id", user.id);
     }
   }
 
@@ -218,6 +239,7 @@ export default function App() {
     9: { showBack: false },
     13: { showBack: true },
     14: { showBack: true },
+    15: { showBack: true },
   };
 
   const hc = headerConfig[screen] || {};
@@ -281,16 +303,16 @@ export default function App() {
           />
         )}
 
-       {showProAd && (
-  <ProAd
-    decisionsUsed={getTodayDecisionCount()}
-    onUpgrade={() => {
-      setShowProAd(false);
-      go(13);
-    }}
-    onDismiss={() => setShowProAd(false)}
-  />
-)}
+        {showProAd && (
+          <ProAd
+            decisionsUsed={getTodayDecisionCount()}
+            onUpgrade={() => {
+              setShowProAd(false);
+              go(13);
+            }}
+            onDismiss={() => setShowProAd(false)}
+          />
+        )}
         {/* Auth Modal overlay */}
         {authModal && (
           <div
@@ -416,9 +438,10 @@ export default function App() {
           )}
 
           {screen === 14 && <Leaderboard user={user} />}
+          {screen === 15 && <Support user={user} go={go} />}
         </div>
         <InstallBanner />
-<BottomNav active={navActive} setActive={handleNav} />
+        <BottomNav active={navActive} setActive={handleNav} />
       </div>
     </div>
   );
