@@ -418,7 +418,7 @@ export default function App() {
             <Rematch result={lastResult} onDecided={handleDecided} go={go} />
           )}
           {screen === 6 && <Battles user={user} />}
-          {screen === 7 && <Settings user={user} onSignOut={handleSignOut} />}
+          {screen === 7 && <Settings user={user} onSignOut={handleSignOut} go={go} />}
           {screen === 8 && (
             <Profile
               user={user}

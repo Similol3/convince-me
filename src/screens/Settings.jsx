@@ -16,31 +16,19 @@ function Toggle({ on, toggle }) {
     <button
       onClick={toggle}
       style={{
-        width: 48,
-        height: 26,
-        borderRadius: 13,
+        width: 48, height: 26, borderRadius: 13,
         background: on ? gr() : C.glass,
         border: on ? "none" : `1px solid ${C.glassBdr}`,
-        cursor: "pointer",
-        position: "relative",
-        transition: "background 0.2s",
-        padding: 0,
-        flexShrink: 0,
+        cursor: "pointer", position: "relative",
+        transition: "background 0.2s", padding: 0, flexShrink: 0,
       }}
     >
-      <div
-        style={{
-          position: "absolute",
-          top: 4,
-          width: 18,
-          height: 18,
-          borderRadius: "50%",
-          background: "white",
-          left: on ? 26 : 4,
-          transition: "left 0.2s ease",
-          boxShadow: "0 1px 4px rgba(0,0,0,0.3)",
-        }}
-      />
+      <div style={{
+        position: "absolute", top: 4, width: 18, height: 18,
+        borderRadius: "50%", background: "white",
+        left: on ? 26 : 4, transition: "left 0.2s ease",
+        boxShadow: "0 1px 4px rgba(0,0,0,0.3)",
+      }} />
     </button>
   );
 }
@@ -50,36 +38,21 @@ function Row({ icon, iconBg, title, sub, toggle, on, onClick, danger }) {
     <div
       onClick={onClick}
       style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 14,
+        display: "flex", alignItems: "center", gap: 14,
         padding: "14px 16px",
         cursor: onClick ? "pointer" : "default",
       }}
     >
-      <div
-        style={{
-          width: 42,
-          height: 42,
-          borderRadius: 12,
-          background: iconBg,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: 20,
-          flexShrink: 0,
-        }}
-      >
+      <div style={{
+        width: 42, height: 42, borderRadius: 12,
+        background: iconBg, display: "flex",
+        alignItems: "center", justifyContent: "center",
+        fontSize: 20, flexShrink: 0,
+      }}>
         {icon}
       </div>
       <div style={{ flex: 1 }}>
-        <div
-          style={{
-            fontSize: 14,
-            fontWeight: 600,
-            color: danger ? C.red : "white",
-          }}
-        >
+        <div style={{ fontSize: 14, fontWeight: 600, color: danger ? C.red : "white" }}>
           {title}
         </div>
         <div style={{ fontSize: 12, color: C.muted, marginTop: 1 }}>{sub}</div>
@@ -93,15 +66,16 @@ function Row({ icon, iconBg, title, sub, toggle, on, onClick, danger }) {
   );
 }
 
-export default function Settings({ user, onSignOut }) {
-  const [sound, setSound] = useState(() => getSetting(KEYS.SOUND, true));
-  const [haptic, setHaptic] = useState(() => getSetting(KEYS.HAPTIC, true));
+// ── go is now accepted as a prop ───────────────────────────
+export default function Settings({ user, onSignOut, go }) {
+  const [sound,       setSound]       = useState(() => getSetting(KEYS.SOUND,   true));
+  const [haptic,      setHaptic]      = useState(() => getSetting(KEYS.HAPTIC,  true));
   const [showConfirm, setShowConfirm] = useState(false);
-  const [cleared, setCleared] = useState(false);
+  const [cleared,     setCleared]     = useState(false);
   const [editingName, setEditingName] = useState(false);
-  const [newName, setNewName] = useState(user?.username || "");
-  const [nameError, setNameError] = useState("");
-  const [nameSaved, setNameSaved] = useState(false);
+  const [newName,     setNewName]     = useState(user?.username || "");
+  const [nameError,   setNameError]   = useState("");
+  const [nameSaved,   setNameSaved]   = useState(false);
 
   async function handleSaveUsername() {
     const trimmed = newName.trim().toLowerCase().replace(/\s+/g, "_");
@@ -122,7 +96,6 @@ export default function Settings({ user, onSignOut }) {
       setEditingName(false);
       setNameSaved(true);
       setTimeout(() => setNameSaved(false), 2000);
-      // Reload to refresh user object everywhere
       window.location.reload();
     } else {
       setNameError("That username is taken or invalid");
@@ -130,7 +103,7 @@ export default function Settings({ user, onSignOut }) {
   }
 
   const totalXP = user?.xp || 0;
-  const lvl = getLevelInfo(totalXP);
+  const lvl     = getLevelInfo(totalXP);
 
   function toggleSound() {
     const newVal = !sound;
@@ -148,19 +121,11 @@ export default function Settings({ user, onSignOut }) {
   async function handleClearHistory() {
     if (!user) return;
 
-    // Clear decisions from Supabase
     await supabase.from("decisions").delete().eq("user_id", user.id);
-
-    // Clear local Connect history
     clearConnectHistory();
-
-    // Reset user stats
     await supabase
       .from("users")
-      .update({
-        total_decisions: 0,
-        streak: 0,
-      })
+      .update({ total_decisions: 0, streak: 0 })
       .eq("id", user.id);
 
     setShowConfirm(false);
@@ -169,51 +134,33 @@ export default function Settings({ user, onSignOut }) {
   }
 
   return (
-    <div
-      style={{
-        padding: "24px 16px",
-        display: "flex",
-        flexDirection: "column",
-        gap: 24,
-        minHeight: "100%",
-        background: C.bg,
-      }}
-    >
+    <div style={{
+      padding: "24px 16px", display: "flex", flexDirection: "column",
+      gap: 24, minHeight: "100%", background: C.bg,
+    }}>
+
+      {/* Title */}
       <div>
-        <h1
-          style={{ fontSize: 28, fontWeight: 900, color: "white", margin: 0 }}
-        >
+        <h1 style={{ fontSize: 28, fontWeight: 900, color: "white", margin: 0 }}>
           Settings
         </h1>
-        <p
-          style={{
-            fontSize: 11,
-            fontWeight: 700,
-            letterSpacing: "0.1em",
-            color: C.muted,
-            margin: "4px 0 0",
-          }}
-        >
+        <p style={{
+          fontSize: 11, fontWeight: 700, letterSpacing: "0.1em",
+          color: C.muted, margin: "4px 0 0",
+        }}>
           SYSTEM PREFERENCES
         </p>
       </div>
+
       {/* XP card */}
-      <div
-        style={{
-          background: C.glass,
-          border: `1px solid ${C.glassBdr}`,
-          borderRadius: 20,
-          padding: "18px 18px",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 12,
-          }}
-        >
+      <div style={{
+        background: C.glass, border: `1px solid ${C.glassBdr}`,
+        borderRadius: 20, padding: "18px 18px",
+      }}>
+        <div style={{
+          display: "flex", justifyContent: "space-between",
+          alignItems: "center", marginBottom: 12,
+        }}>
           <div>
             <div style={{ fontSize: 16, fontWeight: 800, color: "white" }}>
               {lvl.emoji} {lvl.title}
@@ -233,148 +180,90 @@ export default function Settings({ user, onSignOut }) {
             )}
           </div>
         </div>
-        <div
-          style={{
-            height: 6,
-            background: "rgba(255,255,255,0.08)",
-            borderRadius: 3,
-            overflow: "hidden",
-          }}
-        >
-          <div
-            style={{
-              height: "100%",
-              width: `${lvl.progress}%`,
-              background: `linear-gradient(90deg, ${C.gold}, #FCD34D)`,
-              borderRadius: 3,
-              transition: "width 0.6s ease",
-            }}
-          />
+        <div style={{
+          height: 6, background: "rgba(255,255,255,0.08)",
+          borderRadius: 3, overflow: "hidden",
+        }}>
+          <div style={{
+            height: "100%", width: `${lvl.progress}%`,
+            background: `linear-gradient(90deg, ${C.gold}, #FCD34D)`,
+            borderRadius: 3, transition: "width 0.6s ease",
+          }} />
         </div>
       </div>
+
       {/* Username */}
       <div>
-        <p
-          style={{
-            fontSize: 11,
-            fontWeight: 700,
-            letterSpacing: "0.1em",
-            color: C.muted,
-            margin: "0 0 10px",
-          }}
-        >
+        <p style={{
+          fontSize: 11, fontWeight: 700, letterSpacing: "0.1em",
+          color: C.muted, margin: "0 0 10px",
+        }}>
           ACCOUNT
         </p>
-        <div
-          style={{
-            background: C.glass,
-            border: `1px solid ${C.glassBdr}`,
-            borderRadius: 20,
-            padding: "16px",
-          }}
-        >
+        <div style={{
+          background: C.glass, border: `1px solid ${C.glassBdr}`,
+          borderRadius: 20, padding: "16px",
+        }}>
           {!editingName ? (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div>
                 <div style={{ fontSize: 11, color: C.muted, marginBottom: 2 }}>
                   Username
                 </div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: "white" }}>
-                  @{user?.username}
+                  @{user?.username || "guest"}
                 </div>
               </div>
-              <button
-                onClick={() => {
-                  setEditingName(true);
-                  setNewName(user?.username || "");
-                }}
-                style={{
-                  background: gr(),
-                  border: "none",
-                  borderRadius: 10,
-                  padding: "8px 14px",
-                  color: "white",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  fontFamily: "inherit",
-                }}
-              >
-                Edit
-              </button>
+              {!user?.is_guest && (
+                <button
+                  onClick={() => setEditingName(true)}
+                  style={{
+                    background: C.glass, border: `1px solid ${C.glassBdr}`,
+                    borderRadius: 10, padding: "8px 14px",
+                    color: "white", fontSize: 12, fontWeight: 700,
+                    cursor: "pointer", fontFamily: "inherit",
+                  }}
+                >
+                  Edit
+                </button>
+              )}
             </div>
           ) : (
-            <div>
-              <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>
-                New username
-              </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <input
                 value={newName}
-                onChange={(e) => {
-                  setNewName(e.target.value);
-                  setNameError("");
-                }}
-                placeholder="your_username"
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="New username"
                 style={{
-                  width: "100%",
                   background: "rgba(255,255,255,0.08)",
                   border: `1px solid ${C.glassBdr}`,
-                  borderRadius: 10,
-                  padding: "10px 12px",
-                  color: "white",
-                  fontSize: 14,
-                  fontWeight: 600,
-                  outline: "none",
-                  fontFamily: "inherit",
-                  marginBottom: 8,
-                  boxSizing: "border-box",
+                  borderRadius: 10, padding: "10px 14px",
+                  color: "white", fontSize: 14, fontWeight: 600,
+                  outline: "none", fontFamily: "inherit",
                 }}
               />
               {nameError && (
-                <div style={{ fontSize: 11, color: C.red, marginBottom: 8 }}>
-                  {nameError}
-                </div>
+                <div style={{ fontSize: 12, color: "#FCA5A5" }}>{nameError}</div>
               )}
               <div style={{ display: "flex", gap: 8 }}>
                 <button
                   onClick={handleSaveUsername}
                   style={{
-                    flex: 1,
-                    background: gr(),
-                    border: "none",
-                    borderRadius: 10,
-                    padding: "10px",
-                    color: "white",
-                    fontSize: 13,
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    fontFamily: "inherit",
+                    flex: 1, background: gr(), border: "none",
+                    borderRadius: 10, padding: "10px",
+                    color: "white", fontSize: 13, fontWeight: 700,
+                    cursor: "pointer", fontFamily: "inherit",
                   }}
                 >
                   Save
                 </button>
                 <button
-                  onClick={() => {
-                    setEditingName(false);
-                    setNameError("");
-                  }}
+                  onClick={() => { setEditingName(false); setNameError(""); }}
                   style={{
-                    flex: 1,
-                    background: C.glass,
-                    border: `1px solid ${C.glassBdr}`,
-                    borderRadius: 10,
-                    padding: "10px",
-                    color: "white",
-                    fontSize: 13,
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    fontFamily: "inherit",
+                    flex: 1, background: C.glass, border: `1px solid ${C.glassBdr}`,
+                    borderRadius: 10, padding: "10px",
+                    color: "white", fontSize: 13, fontWeight: 700,
+                    cursor: "pointer", fontFamily: "inherit",
                   }}
                 >
                   Cancel
@@ -384,138 +273,81 @@ export default function Settings({ user, onSignOut }) {
           )}
         </div>
         {nameSaved && (
-          <div
-            style={{
-              fontSize: 11,
-              color: C.emerald,
-              marginTop: 8,
-              textAlign: "center",
-            }}
-          >
+          <div style={{ fontSize: 11, color: C.emerald, marginTop: 8, textAlign: "center" }}>
             ✓ Username updated
           </div>
         )}
       </div>
+
       {/* Preferences */}
       <div>
-        <p
-          style={{
-            fontSize: 11,
-            fontWeight: 700,
-            letterSpacing: "0.1em",
-            color: C.muted,
-            margin: "0 0 10px",
-          }}
-        >
+        <p style={{
+          fontSize: 11, fontWeight: 700, letterSpacing: "0.1em",
+          color: C.muted, margin: "0 0 10px",
+        }}>
           PREFERENCES
         </p>
-        <div
-          style={{
-            background: C.glass,
-            border: `1px solid ${C.glassBdr}`,
-            borderRadius: 20,
-            overflow: "hidden",
-          }}
-        >
+        <div style={{
+          background: C.glass, border: `1px solid ${C.glassBdr}`,
+          borderRadius: 20, overflow: "hidden",
+        }}>
           <Row
-            icon="🔊"
-            iconBg="rgba(139,92,246,0.25)"
-            title="Sound Effects"
-            sub="UI clicks and win chimes"
-            toggle={toggleSound}
-            on={sound}
+            icon="🔊" iconBg="rgba(139,92,246,0.25)"
+            title="Sound Effects" sub="UI clicks and win chimes"
+            toggle={toggleSound} on={sound}
           />
           <div style={{ height: 1, background: C.border, margin: "0 16px" }} />
           <Row
-            icon="📳"
-            iconBg="rgba(6,182,212,0.2)"
-            title="Haptic Feedback"
-            sub="Tactile voting response"
-            toggle={toggleHaptic}
-            on={haptic}
+            icon="📳" iconBg="rgba(6,182,212,0.2)"
+            title="Haptic Feedback" sub="Tactile voting response"
+            toggle={toggleHaptic} on={haptic}
           />
         </div>
       </div>
+
       {/* Data */}
       <div>
-        <p
-          style={{
-            fontSize: 11,
-            fontWeight: 700,
-            letterSpacing: "0.1em",
-            color: C.muted,
-            margin: "0 0 10px",
-          }}
-        >
+        <p style={{
+          fontSize: 11, fontWeight: 700, letterSpacing: "0.1em",
+          color: C.muted, margin: "0 0 10px",
+        }}>
           DATA MANAGEMENT
         </p>
-        <div
-          style={{
-            background: C.glass,
-            border: `1px solid ${C.glassBdr}`,
-            borderRadius: 20,
-            overflow: "hidden",
-          }}
-        >
+        <div style={{
+          background: C.glass, border: `1px solid ${C.glassBdr}`,
+          borderRadius: 20, overflow: "hidden",
+        }}>
           <Row
-            icon="🗑️"
-            iconBg="rgba(239,68,68,0.2)"
-            title="Clear History"
-            sub="Wipe all decisions and Connect history"
-            onClick={() => setShowConfirm(true)}
-            danger
+            icon="🗑️" iconBg="rgba(239,68,68,0.2)"
+            title="Clear History" sub="Wipe all decisions and Connect history"
+            onClick={() => setShowConfirm(true)} danger
           />
         </div>
       </div>
-      {/* Confirm dialog */}
+
+      {/* Confirm clear dialog */}
       {showConfirm && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.6)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 100,
-            padding: 24,
-          }}
-        >
-          <div
-            style={{
-              background: C.card2,
-              border: `1px solid ${C.glassBdr}`,
-              borderRadius: 20,
-              padding: "24px 20px",
-              width: "100%",
-              maxWidth: 340,
-            }}
-          >
-            <div
-              style={{ fontSize: 32, textAlign: "center", marginBottom: 12 }}
-            >
-              ⚠️
-            </div>
-            <h3
-              style={{
-                fontSize: 16,
-                fontWeight: 800,
-                color: "white",
-                textAlign: "center",
-                margin: "0 0 8px",
-              }}
-            >
+        <div style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          zIndex: 100, padding: 24,
+        }}>
+          <div style={{
+            background: C.card2, border: `1px solid ${C.glassBdr}`,
+            borderRadius: 20, padding: "24px 20px",
+            width: "100%", maxWidth: 340,
+          }}>
+            <div style={{ fontSize: 32, textAlign: "center", marginBottom: 12 }}>⚠️</div>
+            <h3 style={{
+              fontSize: 16, fontWeight: 800, color: "white",
+              textAlign: "center", margin: "0 0 8px",
+            }}>
               Clear all history?
             </h3>
-            <p
-              style={{
-                fontSize: 13,
-                color: C.sub,
-                textAlign: "center",
-                margin: "0 0 20px",
-                lineHeight: 1.5,
-              }}
-            >
+            <p style={{
+              fontSize: 13, color: C.sub, textAlign: "center",
+              margin: "0 0 20px", lineHeight: 1.5,
+            }}>
               This will permanently delete all your decisions, battles, and
               Connect history. This can't be undone.
             </p>
@@ -523,15 +355,9 @@ export default function Settings({ user, onSignOut }) {
               <button
                 onClick={handleClearHistory}
                 style={{
-                  background: C.red,
-                  border: "none",
-                  borderRadius: 12,
-                  padding: "14px",
-                  color: "white",
-                  fontSize: 14,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  fontFamily: "inherit",
+                  background: C.red, border: "none", borderRadius: 12,
+                  padding: "14px", color: "white", fontSize: 14,
+                  fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
                 }}
               >
                 Yes, clear everything
@@ -539,14 +365,9 @@ export default function Settings({ user, onSignOut }) {
               <button
                 onClick={() => setShowConfirm(false)}
                 style={{
-                  background: C.glass,
-                  border: `1px solid ${C.glassBdr}`,
-                  borderRadius: 12,
-                  padding: "14px",
-                  color: "white",
-                  fontSize: 14,
-                  fontWeight: 700,
-                  cursor: "pointer",
+                  background: C.glass, border: `1px solid ${C.glassBdr}`,
+                  borderRadius: 12, padding: "14px", color: "white",
+                  fontSize: 14, fontWeight: 700, cursor: "pointer",
                   fontFamily: "inherit",
                 }}
               >
@@ -556,35 +377,28 @@ export default function Settings({ user, onSignOut }) {
           </div>
         </div>
       )}
-      {/* Cleared confirmation toast */}
+
+      {/* Cleared toast */}
       {cleared && (
-        <div
-          style={{
-            background: "rgba(16,185,129,0.15)",
-            border: "1px solid rgba(16,185,129,0.3)",
-            borderRadius: 14,
-            padding: "12px 16px",
-            textAlign: "center",
-          }}
-        >
+        <div style={{
+          background: "rgba(16,185,129,0.15)",
+          border: "1px solid rgba(16,185,129,0.3)",
+          borderRadius: 14, padding: "12px 16px", textAlign: "center",
+        }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: C.emerald }}>
             ✓ History cleared successfully
           </span>
         </div>
-      )}{" "}
+      )}
+
+      {/* ── Help & Support — goes to screen 15 ── */}
       <button
         onClick={() => go(15)}
         style={{
-          background: C.glass,
-          border: `1px solid ${C.glassBdr}`,
-          borderRadius: 16,
-          padding: "16px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          cursor: "pointer",
-          width: "100%",
-          fontFamily: "inherit",
+          background: C.glass, border: `1px solid ${C.glassBdr}`,
+          borderRadius: 16, padding: "16px",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          cursor: "pointer", width: "100%", fontFamily: "inherit",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -595,38 +409,32 @@ export default function Settings({ user, onSignOut }) {
         </div>
         <span style={{ color: C.muted, fontSize: 16 }}>›</span>
       </button>
+
+      {/* Sign out */}
       <button
         onClick={onSignOut}
         style={{
           background: "rgba(239,68,68,0.1)",
           border: "1px solid rgba(239,68,68,0.3)",
-          borderRadius: 14,
-          padding: "14px",
-          color: C.red,
-          fontSize: 14,
-          fontWeight: 700,
-          cursor: "pointer",
-          width: "100%",
-          fontFamily: "inherit",
+          borderRadius: 14, padding: "14px",
+          color: C.red, fontSize: 14, fontWeight: 700,
+          cursor: "pointer", width: "100%", fontFamily: "inherit",
         }}
       >
         Sign Out
       </button>
+
       {/* Footer */}
       <div style={{ textAlign: "center", marginTop: "auto", paddingTop: 12 }}>
         <div style={{ fontSize: 13, color: C.muted }}>Version 1.0.0</div>
-        <div
-          style={{
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: "0.1em",
-            color: "rgba(255,255,255,0.18)",
-            marginTop: 4,
-          }}
-        >
+        <div style={{
+          fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
+          color: "rgba(255,255,255,0.18)", marginTop: 4,
+        }}>
           MADE FOR THE CHRONICALLY INDECISIVE.
         </div>
       </div>
+
     </div>
   );
 }
