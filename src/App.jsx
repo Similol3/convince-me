@@ -39,6 +39,7 @@ import {
 import ProAd from "./screens/ProAd";
 import InstallBanner from "./components/InstallBanner";
 import Support from "./screens/Support";
+import ResetPassword from "./screens/ResetPassword";
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -57,6 +58,7 @@ export default function App() {
   const [avatar, setAvatar] = useState("🎲");
   const [lastResult, setLastResult] = useState(null);
   const [aiRecommendation, setAiRecommendation] = useState(null);
+  const [showResetPassword, setShowResetPassword] = useState(false);
 
   // ── Auth listener ──────────────────────────────────────
   useEffect(() => {
@@ -65,10 +67,14 @@ export default function App() {
       setAuthReady(true);
     });
 
-    const { data: listener } = onAuthChange((s) => {
+    const { data: listener } = onAuthChange((event, s) => {
       setSession(s);
-      // Auto-close any open auth modal once a real session exists
       if (s) setAuthModal(null);
+
+      // Detect password recovery link
+      if (event === "PASSWORD_RECOVERY") {
+        setShowResetPassword(true);
+      }
     });
 
     return () => listener?.subscription?.unsubscribe();
@@ -126,7 +132,7 @@ export default function App() {
   const go = (n, a, b, ans, cat, rec) => {
     // Check decision limit when starting a new decision
     if (n === 1 && !user?.is_pro) {
-      if (isDecisionLimitReached(user?.is_pro)) {
+      if (isDecisionLimitReached(user?.is_pro, user?.bonus_decisions || 0)) {
         setShowProAd(true);
         return;
       }
@@ -250,8 +256,30 @@ export default function App() {
     if (screen === 14) return go(0);
     go(Math.max(0, screen - 1));
   }
+  // Reset password screen
+  if (showResetPassword) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          background: C.bg,
+          display: "flex",
+          justifyContent: "center",
+        }}
+      >
+        <div style={{ width: "100%", maxWidth: 430 }}>
+          <ResetPassword
+            onDone={() => {
+              setShowResetPassword(false);
+              go(0);
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
 
-  // ── Loading state ──────────────────────────────────────
+  // Loading state
   if (!authReady || !user) {
     return (
       <div
@@ -396,7 +424,13 @@ export default function App() {
         />
 
         <div style={{ flex: 1, overflowY: "auto", paddingBottom: 110 }}>
-          {screen === 0 && <Home go={go} user={user} />}
+          {screen === 0 && (
+            <Home
+              go={go}
+              user={user}
+              bonusDecisions={user?.bonus_decisions || 0}
+            />
+          )}
           {screen === 1 && <Options go={go} category={category} />}
           {screen === 2 && <Questions go={go} category={category} />}
           {screen === 3 && (
@@ -418,7 +452,9 @@ export default function App() {
             <Rematch result={lastResult} onDecided={handleDecided} go={go} />
           )}
           {screen === 6 && <Battles user={user} />}
-          {screen === 7 && <Settings user={user} onSignOut={handleSignOut} go={go} />}
+          {screen === 7 && (
+            <Settings user={user} onSignOut={handleSignOut} go={go} />
+          )}
           {screen === 8 && (
             <Profile
               user={user}

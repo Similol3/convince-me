@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase } from "./supabase";
 
 export async function signUp(email, password, username) {
   const { data, error } = await supabase.auth.signUp({
@@ -10,8 +10,8 @@ export async function signUp(email, password, username) {
   if (error) return { success: false, error: error.message };
 
   if (data.user) {
-    await supabase.from('users').insert({
-      id:       data.user.id,
+    await supabase.from("users").insert({
+      id: data.user.id,
       username,
       email,
     });
@@ -21,7 +21,10 @@ export async function signUp(email, password, username) {
 }
 
 export async function signIn(email, password) {
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
   if (error) return { success: false, error: error.message };
   return { success: true, data };
 }
@@ -44,25 +47,26 @@ export async function getSession() {
 }
 
 export function onAuthChange(callback) {
-  return supabase.auth.onAuthStateChange((_event, session) => {
-    callback(session);
+  return supabase.auth.onAuthStateChange((event, session) => {
+    callback(event, session);
   });
 }
 
 export async function getOrCreateProfile(sessionUser) {
   const { data: existing } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', sessionUser.id)
+    .from("users")
+    .select("*")
+    .eq("id", sessionUser.id)
     .single();
 
   if (existing) return existing;
 
-  const username = sessionUser.user_metadata?.username
-    || `user${Math.floor(10000000 + Math.random() * 90000000)}`;
+  const username =
+    sessionUser.user_metadata?.username ||
+    `user${Math.floor(10000000 + Math.random() * 90000000)}`;
 
   const { data: newUser } = await supabase
-    .from('users')
+    .from("users")
     .insert({ id: sessionUser.id, username, email: sessionUser.email })
     .select()
     .single();
