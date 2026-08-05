@@ -35,7 +35,7 @@ export async function signOut() {
 
 export async function resetPassword(email) {
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.origin,
+    redirectTo: "https://convince-me-tau.vercel.app",
   });
   if (error) return { success: false, error: error.message };
   return { success: true };

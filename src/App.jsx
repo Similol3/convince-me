@@ -59,6 +59,7 @@ export default function App() {
   const [lastResult, setLastResult] = useState(null);
   const [aiRecommendation, setAiRecommendation] = useState(null);
   const [showResetPassword, setShowResetPassword] = useState(false);
+  const [decisionWinner, setDecisionWinner] = useState("");
 
   // ── Auth listener ──────────────────────────────────────
   useEffect(() => {
@@ -156,6 +157,7 @@ export default function App() {
 
   async function handleDecided(result) {
     setLastResult(result);
+    setDecisionWinner(result?.winner || ""); // ← add this line
     incrementDecisionCount();
 
     if (user?.is_guest) {
@@ -446,7 +448,11 @@ export default function App() {
             />
           )}
           {screen === 4 && (
-            <Share optA={optA} aiRecommendation={aiRecommendation} go={go} />
+            <Share
+              winner={decisionWinner}
+              aiRecommendation={aiRecommendation}
+              go={go}
+            />
           )}
           {screen === 5 && (
             <Rematch result={lastResult} onDecided={handleDecided} go={go} />

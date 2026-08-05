@@ -2,8 +2,10 @@ import { useState, useRef } from 'react';
 import { toBlob } from 'html-to-image';
 import { C, gr } from '../tokens';
 
-export default function Share({ optA, aiRecommendation, go }) {
-  const winner = optA || 'Your choice';
+export default function Share({ winner, aiRecommendation, go }) {
+  // Use displayWinner consistently everywhere — never raw winner prop
+  const displayWinner = winner || 'Your choice';
+
   const [busy,   setBusy]   = useState(false);
   const [copied, setCopied] = useState(false);
   const cardRef = useRef(null);
@@ -26,11 +28,12 @@ export default function Share({ optA, aiRecommendation, go }) {
 
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
-          files:  [file],
-          title:  'Convince Me',
-          text:   `${winner.toUpperCase()} wins! Decided by Convince Me 🎲\n${APP_URL}`,
+          files: [file],
+          title: 'Convince Me',
+          text:  `${displayWinner.toUpperCase()} wins! Decided by Convince Me 🎲\n${APP_URL}`,
         });
       } else {
+        // Fallback — download the image
         const url = URL.createObjectURL(blob);
         const a   = document.createElement('a');
         a.href     = url;
@@ -38,7 +41,7 @@ export default function Share({ optA, aiRecommendation, go }) {
         a.click();
         URL.revokeObjectURL(url);
         setCopied(true);
-        setTimeout(() => setCopied(false), 1500);
+        setTimeout(() => setCopied(false), 2000);
       }
     } catch (e) {
       console.error('Share error:', e);
@@ -49,10 +52,10 @@ export default function Share({ optA, aiRecommendation, go }) {
 
   function handleCopyCaption() {
     const rec  = aiRecommendation ? `\n\n"${aiRecommendation}"` : '';
-    const text = `${winner.toUpperCase()} wins! 🏆${rec}\n\nDecided by Convince Me 🎲\nTry it free → ${APP_URL}`;
+    const text = `${displayWinner.toUpperCase()} wins! 🏆${rec}\n\nDecided by Convince Me 🎲\nTry it free → ${APP_URL}`;
     navigator.clipboard.writeText(text);
     setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    setTimeout(() => setCopied(false), 2000);
   }
 
   return (
@@ -65,7 +68,7 @@ export default function Share({ optA, aiRecommendation, go }) {
         Share Your Result
       </h2>
 
-      {/* ── Shareable card — captured as image ── */}
+      {/* ── Shareable card — captured as PNG image ── */}
       <div ref={cardRef} style={{
         borderRadius: 28, padding: '28px 24px',
         background: gr(145),
@@ -91,29 +94,38 @@ export default function Share({ optA, aiRecommendation, go }) {
             </div>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.6)', letterSpacing: '0.1em' }}>
+            <div style={{
+              fontSize: 9, color: 'rgba(255,255,255,0.6)',
+              letterSpacing: '0.1em',
+            }}>
               Decision
             </div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'white' }}>Made ✓</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'white' }}>
+              Made ✓
+            </div>
           </div>
         </div>
 
-        {/* Winner */}
-        <div style={{ fontSize: 44, textAlign: 'center', marginBottom: 8 }}>🏆</div>
+        {/* Trophy + winner */}
+        <div style={{ fontSize: 44, textAlign: 'center', marginBottom: 8 }}>
+          🏆
+        </div>
         <div style={{
           fontSize: 11, letterSpacing: '0.14em',
-          color: 'rgba(255,255,255,0.65)', marginBottom: 8, textAlign: 'center',
+          color: 'rgba(255,255,255,0.65)',
+          marginBottom: 8, textAlign: 'center',
         }}>
           THE VERDICT IS IN
         </div>
         <div style={{
           fontSize: 30, fontWeight: 900, color: 'white',
           marginBottom: 14, textAlign: 'center',
+          wordBreak: 'break-word',
         }}>
-          {winner.toUpperCase()}
+          {displayWinner.toUpperCase()}
         </div>
 
-        {/* AI recommendation or fallback */}
+        {/* AI recommendation or fallback quote */}
         <div style={{
           background: aiRecommendation
             ? 'rgba(255,255,255,0.15)'
@@ -129,8 +141,8 @@ export default function Share({ optA, aiRecommendation, go }) {
                 ✨ AI SAYS
               </div>
               <div style={{
-                fontSize: 13, color: 'white', lineHeight: 1.55,
-                fontStyle: 'italic',
+                fontSize: 13, color: 'white',
+                lineHeight: 1.55, fontStyle: 'italic',
               }}>
                 "{aiRecommendation}"
               </div>
@@ -145,7 +157,7 @@ export default function Share({ optA, aiRecommendation, go }) {
           )}
         </div>
 
-        {/* Footer with app link */}
+        {/* Footer with app link — drives new users */}
         <div style={{
           borderTop: '1px solid rgba(255,255,255,0.2)',
           paddingTop: 14, textAlign: 'center',
@@ -165,7 +177,7 @@ export default function Share({ optA, aiRecommendation, go }) {
 
       </div>
 
-      {/* ── Share as image (native share sheet) ── */}
+      {/* ── Share as image — opens native share sheet on mobile ── */}
       <button onClick={handleShareImage} disabled={busy} style={{
         background: gr(), border: 'none', borderRadius: 14,
         padding: '16px', color: 'white', fontSize: 15,
@@ -175,7 +187,7 @@ export default function Share({ optA, aiRecommendation, go }) {
         {busy ? 'Preparing image...' : '📸 Share as Image'}
       </button>
 
-      {/* ── Copy caption with link ── */}
+      {/* ── Copy caption with link — for WhatsApp, Instagram captions ── */}
       <button onClick={handleCopyCaption} style={{
         background: C.glass, border: `1px solid ${C.glassBdr}`,
         borderRadius: 14, padding: '16px', color: 'white',
@@ -195,7 +207,7 @@ export default function Share({ optA, aiRecommendation, go }) {
         DECIDE AGAIN 🔄
       </button>
 
-      {/* ── Social proof ── */}
+      {/* ── Social proof badges ── */}
       <div style={{ display: 'flex', gap: 8 }}>
         {[
           { e: '⚡', l: 'INSTANT DECISION' },
@@ -209,7 +221,9 @@ export default function Share({ optA, aiRecommendation, go }) {
           }}>
             <span style={{ fontSize: 12 }}>{b.e}</span>
             <span style={{ fontSize: 10, fontWeight: 700,
-              color: C.sub, letterSpacing: '0.04em' }}>{b.l}</span>
+              color: C.sub, letterSpacing: '0.04em' }}>
+              {b.l}
+            </span>
           </div>
         ))}
       </div>
