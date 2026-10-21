@@ -1,25 +1,28 @@
 export const C = {
-  bg:       '#08080F',
-  card:     '#15131F',
-  card2:    '#1C1A2B',
-  glass:    'rgba(255,255,255,0.05)',
-  glassBdr: 'rgba(255,255,255,0.08)',
+  bg:      '#0A0A12',
+  card:    '#16141F',
+  card2:   '#1D1B29',
+  glass:   'rgba(255,255,255,0.045)',
+  glassBdr:'rgba(255,255,255,0.09)',
 
-  grape:    '#8B5CF6',
-  pink:     '#EC4899',
-  teal:     '#06B6D4',
-  gold:     '#F59E0B',
-  emerald:  '#10B981',
-  red:      '#EF4444',
+  grape:   '#9165F6',
+  pink:    '#F15BA5',
+  teal:    '#17C6D9',
+  gold:    '#F7B737',
+  emerald: '#19C98A',
+  red:     '#F1556C',
 
-  text:     '#FFFFFF',
-  sub:      'rgba(255,255,255,0.6)',
-  muted:    'rgba(255,255,255,0.35)',
-  border:   'rgba(255,255,255,0.08)',
+  text:    '#FFFFFF',
+  sub:     'rgba(255,255,255,0.64)',
+  muted:   'rgba(255,255,255,0.38)',
+  border:  'rgba(255,255,255,0.09)',
 };
 
-export const gr = (deg = 90) =>
-  `linear-gradient(${deg}deg, #8B5CF6, #EC4899)`;
+export const gr = (deg = 100) =>
+  `linear-gradient(${deg}deg, #9165F6 0%, #F15BA5 100%)`;
 
-export const grGold = (deg = 90) =>
-  `linear-gradient(${deg}deg, #F59E0B, #FCD34D)`;
+export const grGold = (deg = 100) =>
+  `linear-gradient(${deg}deg, #F7B737 0%, #FCD56B 100%)`;
+
+export const grTeal = (deg = 100) =>
+  `linear-gradient(${deg}deg, #17C6D9 0%, #38E1D0 100%)`;

@@ -2,10 +2,10 @@ import { C, gr } from "../tokens";
 import { getPlatform } from "../lib/platform";
 
 const NAV_ITEMS = [
-  { icon: "⚡", label: "Decide" },
-  { icon: "💬", label: "Connect" },
-  { icon: "📊", label: "Battles" },
-  { icon: "👤", label: "Profile" },
+  { icon: '⚡', label: 'Decide'  },
+  { icon: '💬', label: 'Connect' },
+  { icon: '👥', label: 'Crew'    },
+  { icon: '👤', label: 'Profile' },
 ];
 
 export default function BottomNav({ active, setActive }) {

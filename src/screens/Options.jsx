@@ -1,14 +1,19 @@
+
 import { useState } from "react";
 import { C, gr } from "../tokens";
 import { CATEGORIES } from "../data/questions";
+import { createCrewDecision } from "../lib/crewDecisions";
 
-export default function Options({ go, category }) {
+export default function Options({ go, category, user }) {
   const [optA, setOptA] = useState("");
   const [optB, setOptB] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [recommendation, setRecommendation] = useState(null);
   const [wantRec, setWantRec] = useState(false);
+
+  const [sharingCrew, setSharingCrew] = useState(false);
+  const [crewLink, setCrewLink] = useState(null);
 
   const cat = CATEGORIES[category] || CATEGORIES.general;
 
@@ -32,10 +37,12 @@ export default function Options({ go, category }) {
       setError("Please fill in Option A");
       return;
     }
+
     if (!optB.trim()) {
       setError("Please fill in Option B");
       return;
     }
+
     if (optA.trim().toLowerCase() === optB.trim().toLowerCase()) {
       setError("Both options are the same — enter two different things!");
       return;
@@ -44,6 +51,7 @@ export default function Options({ go, category }) {
     if (category === "general") {
       if (wantRec) {
         setLoading(true);
+
         try {
           const r = await fetch("/api/validate", {
             method: "POST",
@@ -55,7 +63,9 @@ export default function Options({ go, category }) {
               wantRecommendation: true,
             }),
           });
+
           const data = await r.json();
+
           if (data.recommendation) {
             setRecommendation(data.recommendation);
             setLoading(false);
@@ -64,8 +74,10 @@ export default function Options({ go, category }) {
         } catch {
           /* fall through */
         }
+
         setLoading(false);
       }
+
       go(2, optA.trim(), optB.trim(), undefined, undefined, null);
       return;
     }
@@ -83,6 +95,7 @@ export default function Options({ go, category }) {
           wantRecommendation: wantRec,
         }),
       });
+
       const data = await r.json();
 
       if (!data.valid) {
@@ -90,11 +103,13 @@ export default function Options({ go, category }) {
           food: `"${cat.placeholderA}" vs "${cat.placeholderB}"`,
           watch: `"${cat.placeholderA}" vs "${cat.placeholderB}"`,
         };
+
         setError(
           `These don't look like ${cat.label} options. Try something like ${
             examples[category] || "valid options"
           }.`
         );
+
         setLoading(false);
         return;
       }
@@ -106,6 +121,7 @@ export default function Options({ go, category }) {
       }
 
       setLoading(false);
+
       // Pass recommendation (null if none) so Reveal can use it
       go(2, optA.trim(), optB.trim(), undefined, undefined, null);
     } catch {
@@ -124,6 +140,35 @@ export default function Options({ go, category }) {
     setOptA("");
     setOptB("");
     setError("");
+  }
+
+  async function handleAskCrew() {
+    if (!optA.trim() || !optB.trim()) {
+      setError('Fill in both options first');
+      return;
+    }
+
+    if (!user?.id || user?.is_guest) {
+      setError('Sign up to ask your crew');
+      return;
+    }
+
+    setSharingCrew(true);
+
+    const result = await createCrewDecision(
+      user.id,
+      optA.trim(),
+      optB.trim(),
+      category
+    );
+
+    setSharingCrew(false);
+
+    if (result) {
+      setCrewLink(result.shareUrl);
+    } else {
+      setError('Could not create — try again');
+    }
   }
 
   const recLabel = {
@@ -161,6 +206,7 @@ export default function Options({ go, category }) {
         >
           {cat.emoji} {cat.label.toUpperCase()} · DECIDE IN 30s
         </p>
+
         <h1
           style={{
             fontSize: 26,
@@ -172,6 +218,7 @@ export default function Options({ go, category }) {
         >
           What's the dilemma?
         </h1>
+
         <p style={{ fontSize: 13, color: C.sub, margin: "4px 0 0" }}>
           {cat.inputHint}
         </p>
@@ -197,8 +244,10 @@ export default function Options({ go, category }) {
         >
           OPTION A
         </p>
+
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <span style={{ fontSize: 28 }}>{cat.emoji}</span>
+
           <input
             value={optA}
             onChange={(e) => {
@@ -215,6 +264,7 @@ export default function Options({ go, category }) {
       {/* VS */}
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <div style={{ flex: 1, height: 1, background: C.border }} />
+
         <div
           style={{
             width: 46,
@@ -232,6 +282,7 @@ export default function Options({ go, category }) {
         >
           VS
         </div>
+
         <div style={{ flex: 1, height: 1, background: C.border }} />
       </div>
 
@@ -255,8 +306,10 @@ export default function Options({ go, category }) {
         >
           OPTION B
         </p>
+
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <span style={{ fontSize: 28 }}>{cat.emoji}</span>
+
           <input
             value={optB}
             onChange={(e) => {
@@ -307,10 +360,12 @@ export default function Options({ go, category }) {
             </span>
           )}
         </div>
+
         <div>
           <div style={{ fontSize: 13, fontWeight: 700, color: "white" }}>
             {recLabel[category] || recLabel.general}
           </div>
+
           <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>
             {recDesc[category] || recDesc.general}
           </div>
@@ -331,6 +386,7 @@ export default function Options({ go, category }) {
           }}
         >
           <span style={{ fontSize: 16, flexShrink: 0 }}>⚠️</span>
+
           <span
             style={{
               fontSize: 13,
@@ -366,6 +422,7 @@ export default function Options({ go, category }) {
           >
             ✨ AI RECOMMENDATION
           </div>
+
           <p
             style={{
               fontSize: 14,
@@ -376,6 +433,7 @@ export default function Options({ go, category }) {
           >
             {recommendation}
           </p>
+
           <div style={{ display: "flex", gap: 8 }}>
             <button
               onClick={proceedWithRec}
@@ -394,6 +452,7 @@ export default function Options({ go, category }) {
             >
               Still let the app decide 🎲
             </button>
+
             <button
               onClick={proceedWithoutRec}
               style={{
@@ -416,6 +475,44 @@ export default function Options({ go, category }) {
       )}
 
       <div style={{ marginTop: "auto" }}>
+        {/* Ask Your Crew */}
+        {!crewLink ? (
+          <button onClick={handleAskCrew} disabled={sharingCrew} style={{
+            background: 'rgba(23,198,217,0.12)',
+            border: `1px solid rgba(23,198,217,0.35)`,
+            borderRadius: 14, padding: '15px', color: 'white',
+            fontSize: 14, fontWeight: 700, cursor: 'pointer', width: '100%',
+            fontFamily: 'inherit', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', gap: 8, opacity: sharingCrew ? 0.6 : 1,
+          }}>
+            👥 {sharingCrew ? 'Creating...' : 'Ask Your Crew Instead'}
+          </button>
+        ) : (
+          <div style={{
+            background: 'rgba(23,198,217,0.1)', border: '1px solid rgba(23,198,217,0.3)',
+            borderRadius: 14, padding: '14px 16px',
+          }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: C.teal, margin: '0 0 8px' }}>
+              ✅ LINK READY — SEND TO FRIENDS
+            </p>
+
+            <div style={{ fontSize: 12, color: 'white', wordBreak: 'break-all', marginBottom: 10 }}>
+              {crewLink}
+            </div>
+
+            <button onClick={() => {
+              navigator.clipboard.writeText(crewLink);
+            }} style={{
+              background: C.glass, border: `1px solid ${C.glassBdr}`,
+              borderRadius: 10, padding: '10px', color: 'white',
+              fontSize: 12, fontWeight: 700, cursor: 'pointer',
+              width: '100%', fontFamily: 'inherit',
+            }}>
+              📋 Copy Link
+            </button>
+          </div>
+        )}
+
         <button
           onClick={handleContinue}
           disabled={loading}
@@ -443,6 +540,7 @@ export default function Options({ go, category }) {
               <span style={{ fontSize: 13 }}>
                 {wantRec ? "Getting recommendation..." : "Checking..."}
               </span>
+
               {[0, 1, 2].map((i) => (
                 <div
                   key={i}
