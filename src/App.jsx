@@ -26,6 +26,7 @@ import Profile from "./screens/Profile";
 import Connect from "./screens/Connect";
 import Upgrade from "./screens/Upgrade";
 import Leaderboard from "./screens/Leaderboard";
+import CrewVote from "./screens/CrewVote";
 import {
   isDecisionLimitReached,
   incrementDecisionCount,
@@ -80,6 +81,14 @@ export default function App() {
 
     return () => listener?.subscription?.unsubscribe();
   }, []);
+  
+  // Check if this is a crew vote link
+  const pathParts = window.location.pathname.split("/");
+  const isCrewVoteLink = pathParts[1] === "vote" && pathParts[2];
+
+  if (isCrewVoteLink) {
+    return <CrewVote shareToken={pathParts[2]} />;
+  }
 
   // ── Load user (real or guest) ──────────────────────────
   useEffect(() => {

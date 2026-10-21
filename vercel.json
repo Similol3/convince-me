@@ -1,6 +1,6 @@
 {
-    "rewrites": [
-      { "source": "/((?!api/).*)", "destination": "/index.html" }
-    ]
-  }
-  
+  "rewrites": [
+    { "source": "/vote/:token", "destination": "/index.html" },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ]
+}
