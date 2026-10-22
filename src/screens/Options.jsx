@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { C, gr } from "../tokens";
 import { CATEGORIES } from "../data/questions";
-import { createCrewDecision } from "../lib/crewDecisions";
 
 export default function Options({ go, category, user }) {
   const [optA, setOptA] = useState("");
@@ -11,9 +10,6 @@ export default function Options({ go, category, user }) {
   const [loading, setLoading] = useState(false);
   const [recommendation, setRecommendation] = useState(null);
   const [wantRec, setWantRec] = useState(false);
-
-  const [sharingCrew, setSharingCrew] = useState(false);
-  const [crewLink, setCrewLink] = useState(null);
 
   const cat = CATEGORIES[category] || CATEGORIES.general;
 
@@ -51,7 +47,6 @@ export default function Options({ go, category, user }) {
     if (category === "general") {
       if (wantRec) {
         setLoading(true);
-
         try {
           const r = await fetch("/api/validate", {
             method: "POST",
@@ -74,7 +69,6 @@ export default function Options({ go, category, user }) {
         } catch {
           /* fall through */
         }
-
         setLoading(false);
       }
 
@@ -140,35 +134,6 @@ export default function Options({ go, category, user }) {
     setOptA("");
     setOptB("");
     setError("");
-  }
-
-  async function handleAskCrew() {
-    if (!optA.trim() || !optB.trim()) {
-      setError('Fill in both options first');
-      return;
-    }
-
-    if (!user?.id || user?.is_guest) {
-      setError('Sign up to ask your crew');
-      return;
-    }
-
-    setSharingCrew(true);
-
-    const result = await createCrewDecision(
-      user.id,
-      optA.trim(),
-      optB.trim(),
-      category
-    );
-
-    setSharingCrew(false);
-
-    if (result) {
-      setCrewLink(result.shareUrl);
-    } else {
-      setError('Could not create — try again');
-    }
   }
 
   const recLabel = {
@@ -475,44 +440,6 @@ export default function Options({ go, category, user }) {
       )}
 
       <div style={{ marginTop: "auto" }}>
-        {/* Ask Your Crew */}
-        {!crewLink ? (
-          <button onClick={handleAskCrew} disabled={sharingCrew} style={{
-            background: 'rgba(23,198,217,0.12)',
-            border: `1px solid rgba(23,198,217,0.35)`,
-            borderRadius: 14, padding: '15px', color: 'white',
-            fontSize: 14, fontWeight: 700, cursor: 'pointer', width: '100%',
-            fontFamily: 'inherit', display: 'flex', alignItems: 'center',
-            justifyContent: 'center', gap: 8, opacity: sharingCrew ? 0.6 : 1,
-          }}>
-            👥 {sharingCrew ? 'Creating...' : 'Ask Your Crew Instead'}
-          </button>
-        ) : (
-          <div style={{
-            background: 'rgba(23,198,217,0.1)', border: '1px solid rgba(23,198,217,0.3)',
-            borderRadius: 14, padding: '14px 16px',
-          }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: C.teal, margin: '0 0 8px' }}>
-              ✅ LINK READY — SEND TO FRIENDS
-            </p>
-
-            <div style={{ fontSize: 12, color: 'white', wordBreak: 'break-all', marginBottom: 10 }}>
-              {crewLink}
-            </div>
-
-            <button onClick={() => {
-              navigator.clipboard.writeText(crewLink);
-            }} style={{
-              background: C.glass, border: `1px solid ${C.glassBdr}`,
-              borderRadius: 10, padding: '10px', color: 'white',
-              fontSize: 12, fontWeight: 700, cursor: 'pointer',
-              width: '100%', fontFamily: 'inherit',
-            }}>
-              📋 Copy Link
-            </button>
-          </div>
-        )}
-
         <button
           onClick={handleContinue}
           disabled={loading}

@@ -26,7 +26,6 @@ import Profile from "./screens/Profile";
 import Connect from "./screens/Connect";
 import Upgrade from "./screens/Upgrade";
 import Leaderboard from "./screens/Leaderboard";
-import CrewVote from "./screens/CrewVote";
 import {
   isDecisionLimitReached,
   incrementDecisionCount,
@@ -41,7 +40,6 @@ import ProAd from "./screens/ProAd";
 import InstallBanner from "./components/InstallBanner";
 import Support from "./screens/Support";
 import ResetPassword from "./screens/ResetPassword";
-import Friends from './screens/Friends';
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -82,14 +80,6 @@ export default function App() {
 
     return () => listener?.subscription?.unsubscribe();
   }, []);
-
-  // Check if this is a crew vote link
-  const pathParts = window.location.pathname.split("/");
-  const isCrewVoteLink = pathParts[1] === "vote" && pathParts[2];
-
-  if (isCrewVoteLink) {
-    return <CrewVote shareToken={pathParts[2]} />;
-  }
 
   // ── Load user (real or guest) ──────────────────────────
   useEffect(() => {
@@ -161,7 +151,7 @@ export default function App() {
     setNavActive(i);
     if (i === 0) go(0);
     if (i === 1) go(9);
-    if (i === 2) go(17);
+    if (i === 2) go(6);
     if (i === 3) go(8);
   };
 
@@ -258,8 +248,6 @@ export default function App() {
     13: { showBack: true },
     14: { showBack: true },
     15: { showBack: true },
-    17: { showBack: true },
-
   };
 
   const hc = headerConfig[screen] || {};
@@ -493,7 +481,6 @@ export default function App() {
 
           {screen === 14 && <Leaderboard user={user} />}
           {screen === 15 && <Support user={user} go={go} />}
-          {screen === 17 && <Friends user={user} go={go} />}
         </div>
         <InstallBanner />
         <BottomNav active={navActive} setActive={handleNav} />
