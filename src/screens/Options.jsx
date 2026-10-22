@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { C, gr } from "../tokens";
 import { CATEGORIES } from "../data/questions";
-import { createCrewDecision } from "../lib/crewDecisions";
 
 export default function Options({ go, category, user }) {
   const [optA, setOptA] = useState("");
@@ -12,12 +11,19 @@ export default function Options({ go, category, user }) {
   const [recommendation, setRecommendation] = useState(null);
   const [wantRec, setWantRec] = useState(false);
 
-  const [sharingCrew, setSharingCrew] = useState(false);
-  const [crewLink, setCrewLink] = useState(null);
-
   const cat = CATEGORIES[category] || CATEGORIES.general;
 
-  // ── Existing decision logic ─────────────────────────────
+  const inputStyle = {
+    width: "100%",
+    background: "transparent",
+    border: "none",
+    color: C.text,
+    fontSize: 16,
+    fontWeight: 600,
+    outline: "none",
+    fontFamily: "inherit",
+    padding: 0,
+  };
 
   async function handleContinue() {
     setError("");
@@ -41,7 +47,6 @@ export default function Options({ go, category, user }) {
     if (category === "general") {
       if (wantRec) {
         setLoading(true);
-
         try {
           const r = await fetch("/api/validate", {
             method: "POST",
@@ -64,7 +69,6 @@ export default function Options({ go, category, user }) {
         } catch {
           /* fall through */
         }
-
         setLoading(false);
       }
 
@@ -132,39 +136,10 @@ export default function Options({ go, category, user }) {
     setError("");
   }
 
-  async function handleAskCrew() {
-    if (!optA.trim() || !optB.trim()) {
-      setError("Fill in both options first");
-      return;
-    }
-
-    if (!user?.id || user?.is_guest) {
-      setError("Sign up to ask your crew");
-      return;
-    }
-
-    setSharingCrew(true);
-
-    const result = await createCrewDecision(
-      user.id,
-      optA.trim(),
-      optB.trim(),
-      category
-    );
-
-    setSharingCrew(false);
-
-    if (result) {
-      setCrewLink(result.shareUrl);
-    } else {
-      setError("Could not create — try again");
-    }
-  }
-
   const recLabel = {
-    food: "Give me a food recommendation first",
-    watch: "Recommend which I should watch based on my vibe",
-    general: "Get an AI recommendation before we decide",
+    food: "✨ Give me a food recommendation first",
+    watch: "✨ Recommend which I should watch based on my vibe",
+    general: "✨ Get an AI recommendation before we decide",
   };
 
   const recDesc = {
@@ -173,523 +148,216 @@ export default function Options({ go, category, user }) {
     general: "AI will suggest which option is better for your situation",
   };
 
-  // ── Visual styles ────────────────────────────────────────
-
-  const panel = {
-    background: "rgba(255,255,255,0.035)",
-    border: "1px solid rgba(255,255,255,0.085)",
-    borderRadius: 22,
-  };
-
-  const smallLabel = {
-    fontSize: 10,
-    fontWeight: 800,
-    letterSpacing: "0.15em",
-    color: C.muted,
-  };
-
-  const optionCard = (accent) => ({
-    position: "relative",
-    overflow: "hidden",
-    borderRadius: 22,
-    padding: "20px 18px",
-    background: `linear-gradient(125deg, ${accent} 0%, rgba(255,255,255,0.025) 75%)`,
-    border: `1px solid ${
-      accent === "rgba(139,92,246,0.13)"
-        ? "rgba(167,139,250,0.27)"
-        : "rgba(23,198,217,0.27)"
-    }`,
-    minWidth: 0,
-  });
-
-  const inputStyle = {
-    width: "100%",
-    minWidth: 0,
-    boxSizing: "border-box",
-    border: "none",
-    outline: "none",
-    background: "transparent",
-    color: C.text,
-    fontSize: 18,
-    fontWeight: 750,
-    letterSpacing: "-0.025em",
-    lineHeight: 1.5,
-    padding: "10px 0 4px",
-    fontFamily: "inherit",
-  };
-
-  const secondaryButton = {
-    width: "100%",
-    minHeight: 54,
-    borderRadius: 15,
-    padding: "14px 16px",
-    background: "rgba(23,198,217,0.075)",
-    border: "1px solid rgba(23,198,217,0.32)",
-    color: "#C7F8FC",
-    fontSize: 13,
-    fontWeight: 800,
-    fontFamily: "inherit",
-    cursor: "pointer",
-  };
-
   return (
     <div
       style={{
-        position: "relative",
-        width: "100%",
-        minWidth: 0,
-        boxSizing: "border-box",
-        minHeight: "100%",
-        padding: "26px 18px 32px",
+        padding: "24px 16px",
         display: "flex",
         flexDirection: "column",
-        gap: 22,
-        overflow: "hidden",
-        color: C.text,
-        background: C.bg,
-        fontFamily: "inherit",
+        gap: 20,
+        minHeight: "100%",
+        background: `linear-gradient(180deg, rgba(139,92,246,0.15) 0%, ${C.bg} 45%)`,
       }}
     >
-      {/* Subtle background atmosphere */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          top: -140,
-          right: -150,
-          width: 350,
-          height: 350,
-          borderRadius: "50%",
-          background: "rgba(139,92,246,0.12)",
-          filter: "blur(85px)",
-          pointerEvents: "none",
-        }}
-      />
-
-      {/* Header */}
-      <div style={{ position: "relative", zIndex: 1 }}>
-        <div
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 7,
-            padding: "8px 11px",
-            borderRadius: 100,
-            background: "rgba(255,255,255,0.055)",
-            border: "1px solid rgba(255,255,255,0.09)",
-            marginBottom: 22,
-          }}
-        >
-          <span style={{ fontSize: 14 }}>{cat.emoji}</span>
-          <span
-            style={{
-              ...smallLabel,
-              color: "#DDD6FE",
-              fontSize: 10,
-            }}
-          >
-            {cat.label.toUpperCase()}
-          </span>
-          <span style={{ color: C.muted, fontSize: 10 }}>·</span>
-          <span style={{ ...smallLabel, letterSpacing: "0.05em" }}>
-            DECIDE IN 30s
-          </span>
-        </div>
-
-        <div
+      <div>
+        <p
           style={{
             fontSize: 11,
-            fontWeight: 800,
-            letterSpacing: "0.16em",
-            color: C.grape || "#A78BFA",
-            marginBottom: 9,
+            fontWeight: 700,
+            letterSpacing: "0.12em",
+            color: C.muted,
+            margin: "0 0 6px",
           }}
         >
-          YOUR NEXT DECISION
-        </div>
+          {cat.emoji} {cat.label.toUpperCase()} · DECIDE IN 30s
+        </p>
 
         <h1
           style={{
-            fontSize: "clamp(27px, 7vw, 35px)",
-            lineHeight: 1.12,
-            letterSpacing: "-0.055em",
+            fontSize: 26,
             fontWeight: 900,
-            margin: "0 0 12px",
-            color: "#FFFFFF",
+            color: C.text,
+            margin: 0,
+            lineHeight: 1.2,
           }}
         >
-          Two options.
-          <span
-            style={{
-              display: "block",
-              background: "linear-gradient(100deg, #C4B5FD, #67E8F9)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            }}
-          >
-            One decision.
-          </span>
+          What's the dilemma?
         </h1>
 
-        <p
-          style={{
-            margin: 0,
-            maxWidth: 320,
-            fontSize: 13,
-            lineHeight: 1.65,
-            color: C.sub,
-          }}
-        >
+        <p style={{ fontSize: 13, color: C.sub, margin: "4px 0 0" }}>
           {cat.inputHint}
         </p>
       </div>
 
-      {/* Decision cards */}
+      {/* Option A */}
       <div
         style={{
-          position: "relative",
-          zIndex: 1,
-          display: "flex",
-          flexDirection: "column",
-          gap: 0,
+          background: C.glass,
+          border: `1px solid ${C.glassBdr}`,
+          borderRadius: 16,
+          padding: "16px",
         }}
       >
-        {/* Option A */}
-        <div style={optionCard("rgba(139,92,246,0.13)")}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 12,
-            }}
-          >
-            <span
-              style={{
-                ...smallLabel,
-                color: "#C4B5FD",
-              }}
-            >
-              01 / OPTION A
-            </span>
-
-            <span
-              style={{
-                fontSize: 10,
-                fontWeight: 800,
-                color: "#C4B5FD",
-                background: "rgba(139,92,246,0.14)",
-                borderRadius: 8,
-                padding: "6px 9px",
-              }}
-            >
-              FIRST CHOICE
-            </span>
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 13,
-              marginTop: 15,
-              minWidth: 0,
-            }}
-          >
-            <div
-              style={{
-                width: 47,
-                height: 47,
-                flexShrink: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: 14,
-                background: "rgba(139,92,246,0.16)",
-                border: "1px solid rgba(167,139,250,0.18)",
-                fontSize: 23,
-              }}
-            >
-              {cat.emoji}
-            </div>
-
-            <input
-              aria-label="Option A"
-              value={optA}
-              onChange={(e) => {
-                setOptA(e.target.value);
-                setError("");
-                setRecommendation(null);
-              }}
-              placeholder={cat.placeholderA}
-              style={inputStyle}
-            />
-          </div>
-
-          <div
-            style={{
-              height: 2,
-              marginTop: 15,
-              borderRadius: 2,
-              background:
-                "linear-gradient(90deg, rgba(167,139,250,0.75), transparent)",
-            }}
-          />
-        </div>
-
-        {/* VS divider */}
-        <div
+        <p
           style={{
-            height: 45,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 13,
-            position: "relative",
-            zIndex: 2,
-            margin: "0 12px",
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: "0.1em",
+            color: C.muted,
+            margin: "0 0 10px",
           }}
         >
-          <div
-            style={{
-              height: 1,
-              flex: 1,
-              background: "rgba(255,255,255,0.11)",
+          OPTION A
+        </p>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ fontSize: 28 }}>{cat.emoji}</span>
+
+          <input
+            value={optA}
+            onChange={(e) => {
+              setOptA(e.target.value);
+              setError("");
+              setRecommendation(null);
             }}
-          />
-
-          <div
-            style={{
-              width: 37,
-              height: 37,
-              flexShrink: 0,
-              borderRadius: 12,
-              transform: "rotate(-8deg)",
-              background: "#201A35",
-              border: "1px solid rgba(196,181,253,0.3)",
-              boxShadow: "0 5px 20px rgba(0,0,0,0.18)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 11,
-              fontWeight: 900,
-              color: "#FFFFFF",
-              letterSpacing: "-0.03em",
-            }}
-          >
-            VS
-          </div>
-
-          <div
-            style={{
-              height: 1,
-              flex: 1,
-              background: "rgba(255,255,255,0.11)",
-            }}
-          />
-        </div>
-
-        {/* Option B */}
-        <div style={optionCard("rgba(23,198,217,0.09)")}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 12,
-            }}
-          >
-            <span
-              style={{
-                ...smallLabel,
-                color: "#67E8F9",
-              }}
-            >
-              02 / OPTION B
-            </span>
-
-            <span
-              style={{
-                fontSize: 10,
-                fontWeight: 800,
-                color: "#67E8F9",
-                background: "rgba(23,198,217,0.1)",
-                borderRadius: 8,
-                padding: "6px 9px",
-              }}
-            >
-              SECOND CHOICE
-            </span>
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 13,
-              marginTop: 15,
-              minWidth: 0,
-            }}
-          >
-            <div
-              style={{
-                width: 47,
-                height: 47,
-                flexShrink: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: 14,
-                background: "rgba(23,198,217,0.12)",
-                border: "1px solid rgba(103,232,249,0.18)",
-                fontSize: 23,
-              }}
-            >
-              {cat.emoji}
-            </div>
-
-            <input
-              aria-label="Option B"
-              value={optB}
-              onChange={(e) => {
-                setOptB(e.target.value);
-                setError("");
-                setRecommendation(null);
-              }}
-              placeholder={cat.placeholderB}
-              style={inputStyle}
-            />
-          </div>
-
-          <div
-            style={{
-              height: 2,
-              marginTop: 15,
-              borderRadius: 2,
-              background:
-                "linear-gradient(90deg, rgba(23,198,217,0.8), transparent)",
-            }}
+            placeholder={cat.placeholderA}
+            style={inputStyle}
           />
         </div>
       </div>
 
-      {/* AI recommendation switch */}
-      <button
-        type="button"
-        onClick={() => setWantRec((w) => !w)}
-        aria-pressed={wantRec}
+      {/* VS */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ flex: 1, height: 1, background: C.border }} />
+
+        <div
+          style={{
+            width: 46,
+            height: 46,
+            borderRadius: "50%",
+            background: gr(),
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 13,
+            fontWeight: 900,
+            color: "white",
+            boxShadow: "0 0 24px rgba(139,92,246,0.5)",
+          }}
+        >
+          VS
+        </div>
+
+        <div style={{ flex: 1, height: 1, background: C.border }} />
+      </div>
+
+      {/* Option B */}
+      <div
         style={{
-          ...panel,
-          position: "relative",
-          zIndex: 1,
-          width: "100%",
-          boxSizing: "border-box",
-          padding: "17px 15px",
+          background: C.glass,
+          border: `1px solid ${C.glassBdr}`,
+          borderRadius: 16,
+          padding: "16px",
+        }}
+      >
+        <p
+          style={{
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: "0.1em",
+            color: C.muted,
+            margin: "0 0 10px",
+          }}
+        >
+          OPTION B
+        </p>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ fontSize: 28 }}>{cat.emoji}</span>
+
+          <input
+            value={optB}
+            onChange={(e) => {
+              setOptB(e.target.value);
+              setError("");
+              setRecommendation(null);
+            }}
+            placeholder={cat.placeholderB}
+            style={inputStyle}
+          />
+        </div>
+      </div>
+
+      {/* AI Recommendation checkbox */}
+      <button
+        onClick={() => setWantRec((w) => !w)}
+        style={{
+          background: wantRec ? "rgba(139,92,246,0.12)" : C.glass,
+          border: `1px solid ${wantRec ? "rgba(139,92,246,0.4)" : C.glassBdr}`,
+          borderRadius: 14,
+          padding: "13px 16px",
           display: "flex",
           alignItems: "center",
           gap: 12,
-          textAlign: "left",
           cursor: "pointer",
           fontFamily: "inherit",
-          background: wantRec
-            ? "rgba(139,92,246,0.105)"
-            : panel.background,
-          border: wantRec
-            ? "1px solid rgba(167,139,250,0.36)"
-            : panel.border,
-          transition: "background 0.2s, border-color 0.2s",
+          textAlign: "left",
+          transition: "all 0.15s",
         }}
       >
         <div
           style={{
-            width: 39,
-            height: 39,
+            width: 22,
+            height: 22,
+            borderRadius: 6,
             flexShrink: 0,
-            borderRadius: 12,
-            background: "rgba(139,92,246,0.13)",
+            background: wantRec ? gr() : "rgba(255,255,255,0.1)",
+            border: `2px solid ${wantRec ? "transparent" : C.glassBdr}`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: 19,
+            transition: "all 0.15s",
           }}
         >
-          ✨
+          {wantRec && (
+            <span style={{ fontSize: 12, color: "white", fontWeight: 800 }}>
+              ✓
+            </span>
+          )}
         </div>
 
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div
-            style={{
-              fontSize: 13,
-              fontWeight: 800,
-              color: "#FFFFFF",
-              lineHeight: 1.4,
-            }}
-          >
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "white" }}>
             {recLabel[category] || recLabel.general}
           </div>
 
-          <div
-            style={{
-              fontSize: 11,
-              color: C.muted,
-              marginTop: 4,
-              lineHeight: 1.5,
-            }}
-          >
+          <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>
             {recDesc[category] || recDesc.general}
           </div>
-        </div>
-
-        {/* Visual toggle */}
-        <div
-          style={{
-            width: 39,
-            height: 23,
-            flexShrink: 0,
-            padding: 3,
-            boxSizing: "border-box",
-            borderRadius: 100,
-            background: wantRec ? "#8B5CF6" : "rgba(255,255,255,0.16)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: wantRec ? "flex-end" : "flex-start",
-            transition: "background 0.2s",
-          }}
-        >
-          <div
-            style={{
-              width: 17,
-              height: 17,
-              borderRadius: "50%",
-              background: "#FFFFFF",
-              boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
-            }}
-          />
         </div>
       </button>
 
       {/* Error */}
       {error && (
         <div
-          role="alert"
           style={{
+            background: "rgba(239,68,68,0.1)",
+            border: "1px solid rgba(239,68,68,0.3)",
+            borderRadius: 12,
+            padding: "12px 14px",
             display: "flex",
             alignItems: "flex-start",
-            gap: 10,
-            borderRadius: 15,
-            padding: "14px 15px",
-            background: "rgba(239,68,68,0.09)",
-            border: "1px solid rgba(248,113,113,0.25)",
+            gap: 8,
           }}
         >
-          <span style={{ fontSize: 16 }}>⚠️</span>
+          <span style={{ fontSize: 16, flexShrink: 0 }}>⚠️</span>
 
           <span
             style={{
-              fontSize: 12,
-              lineHeight: 1.6,
+              fontSize: 13,
               color: "#FCA5A5",
-              fontWeight: 650,
+              fontWeight: 600,
+              lineHeight: 1.4,
             }}
           >
             {error}
@@ -697,58 +365,52 @@ export default function Options({ go, category, user }) {
         </div>
       )}
 
-      {/* AI recommendation result */}
+      {/* AI Recommendation result */}
       {recommendation && (
         <div
           style={{
-            ...panel,
-            padding: 19,
-            background:
-              "linear-gradient(135deg, rgba(139,92,246,0.15), rgba(139,92,246,0.035))",
-            border: "1px solid rgba(167,139,250,0.28)",
+            background: "rgba(139,92,246,0.1)",
+            border: "1px solid rgba(139,92,246,0.4)",
+            borderRadius: 18,
+            padding: "18px 20px",
             animation: "slideUp 0.35s ease",
           }}
         >
           <div
             style={{
-              ...smallLabel,
-              color: "#C4B5FD",
-              marginBottom: 13,
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: "0.1em",
+              color: C.grape,
+              marginBottom: 10,
             }}
           >
-            ✨ YOUR AI RECOMMENDATION
+            ✨ AI RECOMMENDATION
           </div>
 
           <p
             style={{
               fontSize: 14,
-              lineHeight: 1.75,
-              color: "#F5F3FF",
-              margin: "0 0 19px",
+              color: "white",
+              margin: "0 0 16px",
+              lineHeight: 1.65,
             }}
           >
             {recommendation}
           </p>
 
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 10,
-            }}
-          >
+          <div style={{ display: "flex", gap: 8 }}>
             <button
-              type="button"
               onClick={proceedWithRec}
               style={{
-                width: "100%",
-                padding: "14px",
-                border: "none",
-                borderRadius: 13,
+                flex: 1,
                 background: gr(),
-                color: "#FFFFFF",
-                fontWeight: 800,
+                border: "none",
+                borderRadius: 12,
+                padding: "12px",
+                color: "white",
                 fontSize: 13,
+                fontWeight: 700,
                 cursor: "pointer",
                 fontFamily: "inherit",
               }}
@@ -757,17 +419,16 @@ export default function Options({ go, category, user }) {
             </button>
 
             <button
-              type="button"
               onClick={proceedWithoutRec}
               style={{
-                width: "100%",
-                padding: "13px",
-                borderRadius: 13,
-                background: "rgba(255,255,255,0.045)",
-                border: "1px solid rgba(255,255,255,0.12)",
-                color: "#FFFFFF",
-                fontWeight: 700,
+                flex: 1,
+                background: C.glass,
+                border: `1px solid ${C.glassBdr}`,
+                borderRadius: 12,
+                padding: "12px",
+                color: "white",
                 fontSize: 13,
+                fontWeight: 700,
                 cursor: "pointer",
                 fontFamily: "inherit",
               }}
@@ -778,55 +439,43 @@ export default function Options({ go, category, user }) {
         </div>
       )}
 
-      {/* Actions */}
-      <div
-        style={{
-          marginTop: 3,
-          display: "flex",
-          flexDirection: "column",
-          gap: 13,
-        }}
-      >
-        {/* Main action */}
+      <div style={{ marginTop: "auto" }}>
         <button
-          type="button"
           onClick={handleContinue}
           disabled={loading}
           style={{
-            width: "100%",
-            minHeight: 58,
-            padding: "16px 18px",
-            border: "none",
-            borderRadius: 16,
             background: gr(),
-            color: "#FFFFFF",
-            fontSize: 14,
-            fontWeight: 900,
-            letterSpacing: "0.025em",
-            fontFamily: "inherit",
+            border: "none",
+            borderRadius: 14,
+            padding: "17px",
+            color: "white",
+            fontSize: 15,
+            fontWeight: 700,
             cursor: loading ? "not-allowed" : "pointer",
-            opacity: loading ? 0.65 : 1,
-            boxShadow: "0 9px 26px rgba(139,92,246,0.2)",
+            width: "100%",
+            letterSpacing: "0.03em",
+            fontFamily: "inherit",
+            opacity: loading ? 0.7 : 1,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: 9,
+            gap: 8,
           }}
         >
           {loading ? (
             <>
-              <span>
+              <span style={{ fontSize: 13 }}>
                 {wantRec ? "Getting recommendation..." : "Checking..."}
               </span>
 
               {[0, 1, 2].map((i) => (
-                <span
+                <div
                   key={i}
                   style={{
                     width: 5,
                     height: 5,
                     borderRadius: "50%",
-                    background: "rgba(255,255,255,0.8)",
+                    background: "rgba(255,255,255,0.7)",
                     animation: `popIn 0.5s ${
                       i * 0.1
                     }s ease-in-out infinite alternate`,
@@ -835,147 +484,9 @@ export default function Options({ go, category, user }) {
               ))}
             </>
           ) : (
-            <>
-              LET'S DECIDE
-              <span style={{ fontSize: 19, lineHeight: 1 }}>→</span>
-            </>
+            "CONTINUE →"
           )}
         </button>
-
-        {/* Secondary action divider */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            padding: "5px 2px",
-          }}
-        >
-          <div
-            style={{
-              height: 1,
-              background: "rgba(255,255,255,0.085)",
-              flex: 1,
-            }}
-          />
-          <span
-            style={{
-              ...smallLabel,
-              fontSize: 10,
-              letterSpacing: "0.09em",
-            }}
-          >
-            OR GET A SECOND OPINION
-          </span>
-          <div
-            style={{
-              height: 1,
-              background: "rgba(255,255,255,0.085)",
-              flex: 1,
-            }}
-          />
-        </div>
-
-        {/* Ask Your Crew */}
-        {!crewLink ? (
-          <button
-            type="button"
-            onClick={handleAskCrew}
-            disabled={sharingCrew}
-            style={{
-              ...secondaryButton,
-              opacity: sharingCrew ? 0.6 : 1,
-              cursor: sharingCrew ? "not-allowed" : "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 10,
-            }}
-          >
-            <span style={{ fontSize: 18 }}>👥</span>
-            {sharingCrew ? "Creating..." : "Ask Your Crew Instead"}
-            {!sharingCrew && (
-              <span
-                style={{
-                  fontSize: 17,
-                  marginLeft: "auto",
-                  lineHeight: 1,
-                }}
-              >
-                ↗
-              </span>
-            )}
-          </button>
-        ) : (
-          <div
-            style={{
-              borderRadius: 17,
-              padding: 17,
-              background: "rgba(23,198,217,0.075)",
-              border: "1px solid rgba(23,198,217,0.3)",
-              minWidth: 0,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                marginBottom: 12,
-              }}
-            >
-              <span style={{ fontSize: 16 }}>✅</span>
-
-              <span
-                style={{
-                  ...smallLabel,
-                  color: "#67E8F9",
-                  letterSpacing: "0.09em",
-                }}
-              >
-                LINK READY — SEND TO FRIENDS
-              </span>
-            </div>
-
-            <div
-              style={{
-                padding: "12px",
-                background: "rgba(0,0,0,0.15)",
-                border: "1px solid rgba(255,255,255,0.07)",
-                borderRadius: 10,
-                color: "#FFFFFF",
-                fontSize: 12,
-                lineHeight: 1.6,
-                wordBreak: "break-all",
-                marginBottom: 12,
-              }}
-            >
-              {crewLink}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                navigator.clipboard.writeText(crewLink);
-              }}
-              style={secondaryButton}
-            >
-              📋 Copy Link
-            </button>
-          </div>
-        )}
-
-        <p
-          style={{
-            margin: "1px 0 0",
-            textAlign: "center",
-            fontSize: 11,
-            lineHeight: 1.5,
-            color: C.muted,
-          }}
-        >
-          Your decision. Your call.
-        </p>
       </div>
     </div>
   );
