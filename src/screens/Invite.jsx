@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { C, gr } from "../tokens";
 
@@ -6,16 +7,30 @@ const APP_URL = "https://convince-me-tau.vercel.app";
 const card = {
   background: C.glass,
   border: `1px solid ${C.glassBdr}`,
-  borderRadius: 18,
-  padding: 18,
+  borderRadius: 16,
+  padding: 16,
 };
 
 const sectionTitle = {
-  fontSize: 11,
+  fontSize: 10,
   fontWeight: 800,
-  letterSpacing: "0.1em",
+  letterSpacing: "0.12em",
   color: C.muted,
-  margin: "0 0 14px",
+  margin: "0 0 13px",
+};
+
+const primaryButton = {
+  width: "100%",
+  padding: "14px 16px",
+  background: gr(),
+  border: "none",
+  borderRadius: 12,
+  color: "white",
+  fontSize: 13,
+  fontWeight: 800,
+  cursor: "pointer",
+  fontFamily: "inherit",
+  transition: "opacity 0.2s ease",
 };
 
 export default function Invite({ user }) {
@@ -107,64 +122,6 @@ ${inviteLink}`;
     }
   }
 
-  if (user?.is_guest) {
-    return (
-      <div
-        style={{
-          minHeight: "100%",
-          padding: "65px 24px",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          textAlign: "center",
-          gap: 14,
-          background: C.bg,
-        }}
-      >
-        <div
-          style={{
-            width: 76,
-            height: 76,
-            borderRadius: 22,
-            background: "rgba(139,92,246,0.12)",
-            border: "1px solid rgba(139,92,246,0.25)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 36,
-          }}
-        >
-          🔗
-        </div>
-
-        <h2
-          style={{
-            fontSize: 21,
-            fontWeight: 900,
-            color: "white",
-            margin: 0,
-          }}
-        >
-          Invite your friends
-        </h2>
-
-        <p
-          style={{
-            maxWidth: 290,
-            fontSize: 13,
-            color: C.sub,
-            lineHeight: 1.7,
-            margin: 0,
-          }}
-        >
-          Create a free account to get your personal invite link and earn bonus
-          decisions.
-        </p>
-      </div>
-    );
-  }
-
   const steps = [
     {
       emoji: "🔗",
@@ -198,37 +155,118 @@ ${inviteLink}`;
     },
   ];
 
+  if (user?.is_guest) {
+    return (
+      <div
+        style={{
+          boxSizing: "border-box",
+          minHeight: "100%",
+          padding: "60px 24px",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          textAlign: "center",
+          gap: 14,
+          background: C.bg,
+        }}
+      >
+        <div
+          style={{
+            width: 72,
+            height: 72,
+            borderRadius: 20,
+            background: "rgba(139,92,246,0.1)",
+            border: "1px solid rgba(139,92,246,0.2)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 32,
+          }}
+        >
+          🔗
+        </div>
+
+        <h2
+          style={{
+            fontSize: 22,
+            fontWeight: 900,
+            color: "white",
+            margin: 0,
+            letterSpacing: "-0.5px",
+          }}
+        >
+          Invite your friends
+        </h2>
+
+        <p
+          style={{
+            maxWidth: 285,
+            fontSize: 13,
+            color: C.sub,
+            lineHeight: 1.7,
+            margin: 0,
+          }}
+        >
+          Create a free account to get your personal invite link and earn bonus
+          decisions.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div
       style={{
         boxSizing: "border-box",
-        padding: "26px 16px 38px",
+        width: "100%",
+        padding: "24px 16px 36px",
         display: "flex",
         flexDirection: "column",
-        gap: 20,
+        gap: 18,
         minHeight: "100%",
-        background: `radial-gradient(ellipse 90% 40% at 50% 0%, rgba(139,92,246,0.15) 0%, ${C.bg} 75%)`,
+        background: `radial-gradient(ellipse 90% 35% at 50% 0%, rgba(139,92,246,0.11) 0%, ${C.bg} 78%)`,
       }}
     >
       {/* Header */}
-      <div>
+      <div style={{ padding: "2px 1px 0" }}>
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "5px 9px",
+            borderRadius: 999,
+            border: "1px solid rgba(139,92,246,0.22)",
+            background: "rgba(139,92,246,0.07)",
+            color: C.grape,
+            fontSize: 10,
+            fontWeight: 800,
+            letterSpacing: "0.09em",
+            marginBottom: 10,
+          }}
+        >
+          ✦ GROW TOGETHER
+        </div>
+
         <h1
           style={{
             fontSize: 25,
             fontWeight: 900,
             color: "white",
             margin: 0,
-            letterSpacing: "-0.6px",
+            letterSpacing: "-0.7px",
+            lineHeight: 1.2,
           }}
         >
-          Invite Friends 🔗
+          Invite Friends <span style={{ fontSize: 21 }}>🔗</span>
         </h1>
 
         <p
           style={{
             fontSize: 13,
             color: C.sub,
-            margin: "7px 0 0",
+            margin: "8px 0 0",
             lineHeight: 1.6,
           }}
         >
@@ -240,7 +278,7 @@ ${inviteLink}`;
       <div style={card}>
         <p style={sectionTitle}>HOW IT WORKS</p>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 17 }}>
           {steps.map((step, i) => (
             <div
               key={step.title}
@@ -255,19 +293,19 @@ ${inviteLink}`;
                   width: 38,
                   height: 38,
                   borderRadius: 12,
-                  background: "rgba(139,92,246,0.13)",
-                  border: "1px solid rgba(139,92,246,0.2)",
+                  background: "rgba(139,92,246,0.09)",
+                  border: "1px solid rgba(139,92,246,0.17)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: 18,
+                  fontSize: 17,
                   flexShrink: 0,
                 }}
               >
                 {step.emoji}
               </div>
 
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: 1, paddingTop: 2 }}>
                 <div
                   style={{
                     fontSize: 13,
@@ -283,7 +321,7 @@ ${inviteLink}`;
                     fontSize: 12,
                     color: C.muted,
                     marginTop: 4,
-                    lineHeight: 1.55,
+                    lineHeight: 1.6,
                   }}
                 >
                   {step.desc}
@@ -295,6 +333,8 @@ ${inviteLink}`;
                   fontSize: 10,
                   fontWeight: 800,
                   color: C.muted,
+                  paddingTop: 3,
+                  fontVariantNumeric: "tabular-nums",
                 }}
               >
                 0{i + 1}
@@ -330,17 +370,22 @@ ${inviteLink}`;
             key={item.label}
             style={{
               ...card,
-              padding: "17px 10px",
+              padding: "16px 10px",
               textAlign: "center",
             }}
           >
-            <div style={{ fontSize: 19, marginBottom: 7 }}>{item.emoji}</div>
+            <div style={{ fontSize: 18, marginBottom: 8 }}>
+              {item.emoji}
+            </div>
 
             <div
               style={{
-                fontSize: 26,
+                fontSize: 25,
                 fontWeight: 900,
                 color: item.color,
+                letterSpacing: "-0.5px",
+                lineHeight: 1.1,
+                fontVariantNumeric: "tabular-nums",
               }}
             >
               {item.value}
@@ -350,7 +395,7 @@ ${inviteLink}`;
               style={{
                 fontSize: 11,
                 color: C.muted,
-                marginTop: 5,
+                marginTop: 6,
                 lineHeight: 1.4,
               }}
             >
@@ -371,13 +416,7 @@ ${inviteLink}`;
               marginBottom: 11,
             }}
           >
-            <span
-              style={{
-                fontSize: 12,
-                fontWeight: 800,
-                color: "white",
-              }}
-            >
+            <span style={{ fontSize: 12, fontWeight: 800, color: "white" }}>
               Invite progress
             </span>
 
@@ -386,6 +425,7 @@ ${inviteLink}`;
                 fontSize: 12,
                 fontWeight: 800,
                 color: C.grape,
+                fontVariantNumeric: "tabular-nums",
               }}
             >
               {inviteCount}/7
@@ -394,7 +434,7 @@ ${inviteLink}`;
 
           <div
             style={{
-              height: 8,
+              height: 7,
               background: "rgba(255,255,255,0.07)",
               borderRadius: 999,
               overflow: "hidden",
@@ -419,7 +459,7 @@ ${inviteLink}`;
               fontSize: 11,
               color: C.muted,
               marginTop: 10,
-              lineHeight: 1.5,
+              lineHeight: 1.6,
             }}
           >
             {7 - inviteCount} more invites to reach the maximum bonus (+7 daily
@@ -429,8 +469,8 @@ ${inviteLink}`;
       ) : (
         <div
           style={{
-            background: "rgba(16,185,129,0.08)",
-            border: "1px solid rgba(16,185,129,0.25)",
+            background: "rgba(16,185,129,0.07)",
+            border: "1px solid rgba(16,185,129,0.22)",
             borderRadius: 16,
             padding: 17,
             textAlign: "center",
@@ -444,13 +484,13 @@ ${inviteLink}`;
         </div>
       )}
 
-      {/* Invite link */}
+      {/* Personal invite link */}
       <div
         style={{
-          background: "rgba(139,92,246,0.07)",
-          border: "1px solid rgba(139,92,246,0.28)",
-          borderRadius: 18,
-          padding: 17,
+          background: "rgba(139,92,246,0.055)",
+          border: "1px solid rgba(139,92,246,0.22)",
+          borderRadius: 17,
+          padding: 16,
         }}
       >
         <p
@@ -481,8 +521,11 @@ ${inviteLink}`;
                 color: "white",
                 fontWeight: 600,
                 lineHeight: 1.6,
-                wordBreak: "break-all",
-                marginBottom: 14,
+                overflowWrap: "anywhere",
+                marginBottom: 12,
+                padding: "10px 11px",
+                background: "rgba(0,0,0,0.13)",
+                borderRadius: 10,
               }}
             >
               {inviteLink}
@@ -491,24 +534,26 @@ ${inviteLink}`;
             <button
               onClick={copyLink}
               style={{
-                width: "100%",
+                ...primaryButton,
                 padding: 12,
-                background: copied ? "rgba(16,185,129,0.18)" : C.glass,
-                border: `1px solid ${copied ? C.emerald : C.glassBdr}`,
-                borderRadius: 11,
+                background: copied ? "rgba(16,185,129,0.1)" : C.glass,
+                border: `1px solid ${
+                  copied ? "rgba(16,185,129,0.4)" : C.glassBdr
+                }`,
                 color: copied ? C.emerald : "white",
-                fontSize: 12,
-                fontWeight: 800,
-                cursor: "pointer",
-                fontFamily: "inherit",
-                transition: "all 0.2s",
               }}
             >
-              {copied ? "✓ Link Copied!" : "📋 Copy Invite Link"}
+              {copied ? "✓ Link copied" : "📋 Copy invite link"}
             </button>
           </>
         ) : (
-          <div style={{ fontSize: 12, color: C.muted }}>
+          <div
+            style={{
+              fontSize: 12,
+              color: C.muted,
+              lineHeight: 1.6,
+            }}
+          >
             Couldn't generate your invite link. Please try again later.
           </div>
         )}
@@ -519,40 +564,27 @@ ${inviteLink}`;
         onClick={shareLink}
         disabled={loading || !code}
         style={{
-          background: gr(),
-          border: "none",
-          borderRadius: 14,
-          padding: 16,
-          color: "white",
-          fontSize: 14,
-          fontWeight: 800,
-          cursor: loading || !code ? "not-allowed" : "pointer",
+          ...primaryButton,
+          padding: 15,
           opacity: loading || !code ? 0.5 : 1,
-          width: "100%",
-          fontFamily: "inherit",
-          boxShadow: "0 7px 22px rgba(139,92,246,0.16)",
+          cursor: loading || !code ? "not-allowed" : "pointer",
+          boxShadow: "0 6px 18px rgba(139,92,246,0.13)",
         }}
       >
-        🔗 Share with Friends
+        🔗 Share with friends
       </button>
 
       {/* Message templates */}
       <div>
         <p style={sectionTitle}>READY-TO-SEND MESSAGES</p>
 
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 10,
-          }}
-        >
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {templates.map((msg, i) => (
             <div
               key={msg.platform}
               style={{
                 ...card,
-                padding: 16,
+                padding: 15,
               }}
             >
               <div
@@ -570,8 +602,9 @@ ${inviteLink}`;
                 style={{
                   fontSize: 12,
                   color: "white",
-                  lineHeight: 1.65,
+                  lineHeight: 1.7,
                   marginBottom: 13,
+                  overflowWrap: "anywhere",
                 }}
               >
                 {msg.text}
@@ -581,19 +614,23 @@ ${inviteLink}`;
                 onClick={() => copyTemplate(msg.text, i)}
                 disabled={!code}
                 style={{
-                  background: "rgba(255,255,255,0.04)",
-                  border: `1px solid ${C.glassBdr}`,
-                  borderRadius: 9,
-                  padding: "9px 12px",
+                  background: "rgba(255,255,255,0.035)",
+                  border: `1px solid ${
+                    copyMessage === i
+                      ? "rgba(16,185,129,0.35)"
+                      : C.glassBdr
+                  }`,
+                  borderRadius: 10,
+                  padding: "10px 12px",
                   color: copyMessage === i ? C.emerald : C.sub,
                   fontSize: 11,
-                  fontWeight: 700,
+                  fontWeight: 750,
                   cursor: code ? "pointer" : "not-allowed",
                   opacity: code ? 1 : 0.5,
                   fontFamily: "inherit",
                 }}
               >
-                {copyMessage === i ? "✓ Copied!" : "📋 Copy this message"}
+                {copyMessage === i ? "✓ Copied" : "📋 Copy message"}
               </button>
             </div>
           ))}
