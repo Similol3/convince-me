@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { C, gr, grGold } from "../tokens";
 import { getLevelInfo, BADGES, RARITY } from "../data/levels";
@@ -8,33 +9,57 @@ export default function Profile({ user, go, avatar, onSignIn, onSignUp }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
+    let active = true;
 
-    // Guest users: use local data directly, no Supabase fetch
-    if (user.is_guest) {
-      setStats(user);
-      setLoading(false);
-      return;
-    }
+    async function loadProfile() {
+      if (!user) {
+        setStats(null);
+        setLoading(false);
+        return;
+      }
 
-    // Real logged-in users: fetch fresh data from Supabase
-    supabase
-      .from("users")
-      .select("*")
-      .eq("id", user.id)
-      .single()
-      .then(({ data, error }) => {
+      setLoading(true);
+
+      // Guest accounts use their local data.
+      if (user.is_guest) {
+        setStats(user);
+        setLoading(false);
+        return;
+      }
+
+      // Logged-in accounts fetch their latest profile.
+      try {
+        const { data, error } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+
+        if (!active) return;
+
         if (error) {
           console.error("Profile fetch error:", error);
-          setStats(user); // fallback to what we already have
+          setStats(user);
         } else {
-          setStats(data);
+          setStats(data || user);
         }
-        setLoading(false);
-      });
+      } catch (error) {
+        if (!active) return;
+        console.error("Profile fetch error:", error);
+        setStats(user);
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    loadProfile();
+
+    return () => {
+      active = false;
+    };
   }, [user]);
 
-  if (loading || !stats) {
+  if (loading) {
     return (
       <div
         style={{
@@ -49,89 +74,136 @@ export default function Profile({ user, go, avatar, onSignIn, onSignUp }) {
     );
   }
 
-  const lvl = getLevelInfo(stats.xp || 0);
+  if (!stats) {
+    return (
+      <div
+        style={{
+          padding: "60px 16px",
+          textAlign: "center",
+          color: C.muted,
+          fontSize: 14,
+        }}
+      >
+        Sign in to view your profile.
+        <div style={{ display: "flex", justifyContent: "center", gap: 10, marginTop: 16 }}>
+          <button onClick={onSignIn} style={secondaryButton}>
+            Log In
+          </button>
+          <button onClick={onSignUp} style={primaryButton}>
+            Create Account
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const xp = Number(stats.xp) || 0;
+  const coins = Number(stats.coins) || 0;
+  const streak = Number(stats.streak) || 0;
+  const decisions = Number(stats.total_decisions) || 0;
+  const lvl = getLevelInfo(xp);
 
   const badgeState = {
-    totalDecisions: stats.total_decisions || 0,
-    streak: stats.streak || 0,
-    coinFlipWins: 0,
-    shares: 0,
+    totalDecisions: decisions,
+    streak,
+    coinFlipWins: Number(stats.coin_flip_wins) || 0,
+    shares: Number(stats.shares) || 0,
   };
+
+  const earnedBadges = BADGES.filter((badge) => badge.check(badgeState)).length;
 
   return (
     <div
       style={{
-        padding: "24px 16px",
+        boxSizing: "border-box",
+        padding: "24px 16px 36px",
         display: "flex",
         flexDirection: "column",
         gap: 20,
         minHeight: "100%",
-        background: `radial-gradient(ellipse 90% 50% at 50% 0%, rgba(139,92,246,0.2) 0%, ${C.bg} 60%)`,
+        color: "white",
+        background: `radial-gradient(ellipse 90% 40% at 50% 0%, rgba(139,92,246,0.18) 0%, ${C.bg} 75%)`,
       }}
     >
-      {/* Avatar + name */}
+      {/* Profile header */}
       <div style={{ textAlign: "center", paddingTop: 8 }}>
         <div
           style={{
-            width: 72,
-            height: 72,
+            width: 84,
+            height: 84,
             borderRadius: "50%",
             background: gr(),
-            margin: "0 auto 12px",
+            border: "2px solid rgba(255,255,255,0.14)",
+            boxShadow: "0 8px 30px rgba(139,92,246,0.2)",
+            margin: "0 auto 14px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: 32,
+            fontSize: 34,
             overflow: "hidden",
           }}
         >
           {stats.avatar_image ? (
             <img
               src={stats.avatar_image}
-              alt="avatar"
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              alt="Profile avatar"
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+              }}
             />
           ) : (
             avatar || "🎲"
           )}
         </div>
+
         <div
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: 6,
+            gap: 7,
           }}
         >
-          <span style={{ fontSize: 18, fontWeight: 800, color: "white" }}>
-            @{stats.username}
+          <span style={{ fontSize: 20, fontWeight: 800 }}>
+            @{stats.username || "player"}
           </span>
-          {stats.is_pro && <span style={{ fontSize: 16 }}>👑</span>}
+          {stats.is_pro && <span title="Pro member">👑</span>}
         </div>
 
-        <div style={{ fontSize: 13, color: C.sub, marginTop: 2 }}>
+        <div style={{ fontSize: 13, color: C.sub, marginTop: 5 }}>
           {lvl.emoji} {lvl.title}
+        </div>
+
+        <div
+          style={{
+            display: "inline-flex",
+            marginTop: 12,
+            padding: "5px 10px",
+            borderRadius: 999,
+            background: "rgba(255,255,255,0.06)",
+            border: `1px solid ${C.glassBdr}`,
+            color: C.sub,
+            fontSize: 11,
+            fontWeight: 700,
+          }}
+        >
+          {stats.is_guest ? "GUEST ACCOUNT" : stats.is_pro ? "PRO MEMBER" : "FREE MEMBER"}
         </div>
       </div>
 
-      {/* Guest banner */}
+      {/* Guest account banner */}
       {stats.is_guest && (
         <div
           style={{
             background: "rgba(139,92,246,0.1)",
             border: "1px solid rgba(139,92,246,0.3)",
             borderRadius: 18,
-            padding: "18px 16px",
+            padding: 18,
           }}
         >
-          <div
-            style={{
-              fontSize: 13,
-              fontWeight: 700,
-              color: "white",
-              marginBottom: 4,
-            }}
-          >
+          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 5 }}>
             💾 Save your progress
           </div>
           <div
@@ -139,270 +211,312 @@ export default function Profile({ user, go, avatar, onSignIn, onSignUp }) {
               fontSize: 12,
               color: C.sub,
               marginBottom: 14,
-              lineHeight: 1.5,
+              lineHeight: 1.6,
             }}
           >
             Create a free account to save your decisions, appear on the
-            leaderboard, and unlock Pro features.
+            leaderboard, and keep your progress across sessions.
           </div>
+
           <div style={{ display: "flex", gap: 8 }}>
-            <button
-              onClick={onSignUp}
-              style={{
-                flex: 1,
-                background: gr(),
-                border: "none",
-                borderRadius: 12,
-                padding: "12px",
-                color: "white",
-                fontSize: 13,
-                fontWeight: 700,
-                cursor: "pointer",
-                fontFamily: "inherit",
-              }}
-            >
+            <button onClick={onSignUp} style={primaryButton}>
               Create Account
             </button>
-            <button
-              onClick={onSignIn}
-              style={{
-                flex: 1,
-                background: C.glass,
-                border: `1px solid ${C.glassBdr}`,
-                borderRadius: 12,
-                padding: "12px",
-                color: "white",
-                fontSize: 13,
-                fontWeight: 700,
-                cursor: "pointer",
-                fontFamily: "inherit",
-              }}
-            >
+            <button onClick={onSignIn} style={secondaryButton}>
               Log In
             </button>
           </div>
         </div>
       )}
 
-      {/* XP card */}
-      <div
-        style={{
-          background: C.glass,
-          border: `1px solid ${C.glassBdr}`,
-          borderRadius: 20,
-          padding: "18px",
-        }}
-      >
+      {/* XP and level */}
+      <div style={glassCard}>
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: 10,
+            gap: 10,
+            marginBottom: 12,
           }}
         >
-          <span style={{ fontSize: 13, fontWeight: 700, color: "white" }}>
-            Level {lvl.level}
+          <span style={{ fontSize: 14, fontWeight: 800 }}>
+            ⭐ Level {lvl.level}
           </span>
-          <span style={{ fontSize: 12, fontWeight: 700, color: C.gold }}>
-            {stats.xp || 0} XP {lvl.nextXP ? `/ ${lvl.nextXP}` : "· MAX"}
+          <span style={{ fontSize: 12, fontWeight: 800, color: C.gold }}>
+            {xp.toLocaleString()} XP {lvl.nextXP ? `/ ${lvl.nextXP}` : "· MAX"}
           </span>
         </div>
+
         <div
           style={{
-            height: 8,
+            height: 9,
             background: "rgba(255,255,255,0.08)",
-            borderRadius: 4,
+            borderRadius: 999,
             overflow: "hidden",
           }}
         >
           <div
             style={{
               height: "100%",
-              width: `${lvl.progress}%`,
+              width: `${Math.min(100, Math.max(0, lvl.progress || 0))}%`,
               background: grGold(),
-              borderRadius: 4,
+              borderRadius: 999,
               transition: "width 0.6s ease",
             }}
           />
         </div>
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginTop: 9,
+            color: C.muted,
+            fontSize: 11,
+          }}
+        >
+          <span>{lvl.title}</span>
+          <span>{lvl.nextXP ? `${Math.max(0, lvl.nextXP - xp)} XP to next level` : "Maximum level reached"}</span>
+        </div>
       </div>
 
-      {/* Stats row */}
+      {/* Stats */}
       <div
-        style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+          gap: 10,
+        }}
       >
         {[
-          { e: "🪙", v: stats.coins || 0, l: "Coins" },
-          { e: "🔥", v: stats.streak || 0, l: "Day Streak" },
-          { e: "📊", v: stats.total_decisions || 0, l: "Decisions" },
-        ].map((s) => (
+          { emoji: "🪙", value: coins, label: "Coins" },
+          { emoji: "🔥", value: streak, label: "Day Streak" },
+          { emoji: "📊", value: decisions, label: "Decisions" },
+        ].map((item) => (
           <div
-            key={s.l}
+            key={item.label}
             style={{
-              background: C.glass,
-              border: `1px solid ${C.glassBdr}`,
-              borderRadius: 16,
-              padding: "14px 8px",
+              ...glassCard,
+              padding: "16px 6px",
               textAlign: "center",
             }}
           >
-            <div style={{ fontSize: 20, marginBottom: 4 }}>{s.e}</div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: "white" }}>
-              {s.v}
+            <div style={{ fontSize: 22, marginBottom: 7 }}>{item.emoji}</div>
+            <div style={{ fontSize: 17, fontWeight: 800 }}>
+              {item.value.toLocaleString()}
             </div>
-            <div style={{ fontSize: 10, color: C.muted, marginTop: 2 }}>
-              {s.l}
+            <div
+              style={{
+                fontSize: 10,
+                color: C.muted,
+                marginTop: 5,
+              }}
+            >
+              {item.label}
             </div>
           </div>
         ))}
       </div>
 
       {/* Badges */}
-      <div>
-        <p
+      <section>
+        <div
           style={{
-            fontSize: 11,
-            fontWeight: 700,
-            letterSpacing: "0.1em",
-            color: C.muted,
-            margin: "0 0 10px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 12,
           }}
         >
-          BADGES · {BADGES.filter((b) => b.check(badgeState)).length}/
-          {BADGES.length}
-        </p>
+          <p
+            style={{
+              fontSize: 11,
+              fontWeight: 800,
+              letterSpacing: "0.1em",
+              color: C.muted,
+              margin: 0,
+            }}
+          >
+            YOUR BADGES
+          </p>
+          <span style={{ fontSize: 11, color: C.sub }}>
+            {earnedBadges}/{BADGES.length} unlocked
+          </span>
+        </div>
+
         <div
-          style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+            gap: 10,
+          }}
         >
           {BADGES.map((badge) => {
             const earned = badge.check(badgeState);
-            const color = RARITY[badge.rarity];
+            const color = RARITY[badge.rarity] || C.gold;
+
             return (
               <div
                 key={badge.id}
                 style={{
                   background: earned ? C.glass : "rgba(255,255,255,0.02)",
-                  border: `1px solid ${earned ? color + "50" : C.glassBdr}`,
+                  border: `1px solid ${earned ? `${color}70` : C.glassBdr}`,
                   borderRadius: 16,
-                  padding: "14px",
-                  opacity: earned ? 1 : 0.4,
+                  padding: "16px 12px",
+                  opacity: earned ? 1 : 0.48,
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
-                  gap: 6,
+                  gap: 7,
                   textAlign: "center",
+                  minWidth: 0,
                 }}
               >
                 <div
                   style={{
-                    fontSize: 28,
+                    fontSize: 29,
                     filter: earned ? "none" : "grayscale(1)",
                   }}
                 >
                   {badge.emoji}
                 </div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "white" }}>
+
+                <div style={{ fontSize: 12, fontWeight: 800 }}>
                   {badge.name}
                 </div>
-                <div style={{ fontSize: 10, color: C.muted, lineHeight: 1.3 }}>
+
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: C.muted,
+                    lineHeight: 1.5,
+                  }}
+                >
                   {badge.desc}
                 </div>
-                {earned && (
-                  <div
-                    style={{
-                      fontSize: 9,
-                      fontWeight: 700,
-                      color,
-                      letterSpacing: "0.08em",
-                      marginTop: 2,
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    {badge.rarity}
-                  </div>
-                )}
+
+                <div
+                  style={{
+                    fontSize: 9,
+                    fontWeight: 800,
+                    color: earned ? color : C.muted,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    marginTop: 2,
+                  }}
+                >
+                  {earned ? badge.rarity : "LOCKED"}
+                </div>
               </div>
             );
           })}
         </div>
+      </section>
+
+      {/* Navigation actions */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <ProfileAction
+          emoji="🏆"
+          title="Leaderboard"
+          subtitle="See how you rank against others"
+          onClick={() => go(14)}
+        />
+
+        <ProfileAction
+          emoji="👑"
+          title={stats.is_pro ? "Pro Membership" : "Upgrade to Pro"}
+          subtitle={stats.is_pro ? "You're enjoying Pro" : "Unlock more possibilities"}
+          gold
+          onClick={() => go(13)}
+        />
+
+        <ProfileAction
+          emoji="⚙️"
+          title="Settings"
+          subtitle="Manage your account and preferences"
+          onClick={() => go(7)}
+        />
       </div>
-
-      {/* Leaderboard button */}
-      <button
-        onClick={() => go(14)}
-        style={{
-          background: C.glass,
-          border: `1px solid ${C.glassBdr}`,
-          borderRadius: 16,
-          padding: "16px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          cursor: "pointer",
-          width: "100%",
-          fontFamily: "inherit",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ fontSize: 20 }}>🏆</span>
-          <span style={{ fontSize: 14, fontWeight: 700, color: "white" }}>
-            Leaderboard
-          </span>
-        </div>
-        <span style={{ color: C.muted, fontSize: 16 }}>›</span>
-      </button>
-
-      {/* Upgrade button */}
-      <button
-        onClick={() => go(13)}
-        style={{
-          background:
-            "linear-gradient(90deg, rgba(245,158,11,0.15), rgba(252,211,77,0.1))",
-          border: `1px solid rgba(245,158,11,0.3)`,
-          borderRadius: 16,
-          padding: "16px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          cursor: "pointer",
-          width: "100%",
-          fontFamily: "inherit",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ fontSize: 20 }}>👑</span>
-          <span style={{ fontSize: 14, fontWeight: 700, color: "white" }}>
-            {stats.is_pro ? "Pro Member" : "Upgrade to Pro"}
-          </span>
-        </div>
-        <span style={{ color: C.muted, fontSize: 16 }}>›</span>
-      </button>
-
-      {/* Settings button */}
-      <button
-        onClick={() => go(7)}
-        style={{
-          background: C.glass,
-          border: `1px solid ${C.glassBdr}`,
-          borderRadius: 16,
-          padding: "16px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          cursor: "pointer",
-          width: "100%",
-          fontFamily: "inherit",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ fontSize: 20 }}>⚙️</span>
-          <span style={{ fontSize: 14, fontWeight: 700, color: "white" }}>
-            Settings
-          </span>
-        </div>
-        <span style={{ color: C.muted, fontSize: 16 }}>›</span>
-      </button>
     </div>
+  );
+}
+
+const glassCard = {
+  background: C.glass,
+  border: `1px solid ${C.glassBdr}`,
+  borderRadius: 20,
+  padding: 18,
+};
+
+const primaryButton = {
+  flex: 1,
+  background: gr(),
+  border: "none",
+  borderRadius: 12,
+  padding: "12px 10px",
+  color: "white",
+  fontSize: 12,
+  fontWeight: 800,
+  cursor: "pointer",
+  fontFamily: "inherit",
+};
+
+const secondaryButton = {
+  flex: 1,
+  background: C.glass,
+  border: `1px solid ${C.glassBdr}`,
+  borderRadius: 12,
+  padding: "12px 10px",
+  color: "white",
+  fontSize: 12,
+  fontWeight: 800,
+  cursor: "pointer",
+  fontFamily: "inherit",
+};
+
+function ProfileAction({ emoji, title, subtitle, onClick, gold = false }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        background: gold
+          ? "linear-gradient(100deg, rgba(245,158,11,0.14), rgba(252,211,77,0.06))"
+          : C.glass,
+        border: gold
+          ? "1px solid rgba(245,158,11,0.28)"
+          : `1px solid ${C.glassBdr}`,
+        borderRadius: 17,
+        padding: "15px 16px",
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        textAlign: "left",
+        cursor: "pointer",
+        width: "100%",
+        color: "white",
+        fontFamily: "inherit",
+      }}
+    >
+      <span style={{ fontSize: 22 }}>{emoji}</span>
+
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: "block", fontSize: 13, fontWeight: 800 }}>
+          {title}
+        </span>
+        <span
+          style={{
+            display: "block",
+            fontSize: 11,
+            color: C.muted,
+            marginTop: 4,
+          }}
+        >
+          {subtitle}
+        </span>
+      </span>
+
+      <span style={{ color: C.muted, fontSize: 20 }}>›</span>
+    </button>
   );
 }

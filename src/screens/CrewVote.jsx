@@ -9,7 +9,7 @@ export default function CrewVote({ shareToken }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/get-crew-decision?token=${shareToken}`)
+    fetch(`/api/crew?action=get&token=${shareToken}`)
       .then(r => r.json())
       .then(d => {
         setData(d);
@@ -22,7 +22,7 @@ export default function CrewVote({ shareToken }) {
     if (!name.trim()) return;
     setVoting(true);
 
-    await fetch('/api/vote-crew-decision', {
+    await fetch('/api/crew?action=vote', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
