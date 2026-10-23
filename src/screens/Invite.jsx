@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { C, gr } from "../tokens";
 
@@ -35,11 +34,7 @@ export default function Invite({ user }) {
 
     setLoading(true);
 
-    fetch("/api/get-invite-code", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: user.id }),
-    })
+    fetch(`/api/invite?action=code&userId=${user.id}`)
       .then((r) => r.json())
       .then((data) => {
         if (!active) return;
@@ -163,8 +158,8 @@ ${inviteLink}`;
             margin: 0,
           }}
         >
-          Create a free account to get your personal invite link and earn
-          bonus decisions.
+          Create a free account to get your personal invite link and earn bonus
+          decisions.
         </p>
       </div>
     );
@@ -339,9 +334,7 @@ ${inviteLink}`;
               textAlign: "center",
             }}
           >
-            <div style={{ fontSize: 19, marginBottom: 7 }}>
-              {item.emoji}
-            </div>
+            <div style={{ fontSize: 19, marginBottom: 7 }}>{item.emoji}</div>
 
             <div
               style={{
@@ -410,7 +403,10 @@ ${inviteLink}`;
             <div
               style={{
                 height: "100%",
-                width: `${Math.min(100, Math.max(0, (inviteCount / 7) * 100))}%`,
+                width: `${Math.min(
+                  100,
+                  Math.max(0, (inviteCount / 7) * 100)
+                )}%`,
                 background: gr(),
                 borderRadius: 999,
                 transition: "width 0.4s ease",
@@ -426,8 +422,8 @@ ${inviteLink}`;
               lineHeight: 1.5,
             }}
           >
-            {7 - inviteCount} more invites to reach the maximum bonus
-            (+7 daily decisions).
+            {7 - inviteCount} more invites to reach the maximum bonus (+7 daily
+            decisions).
           </div>
         </div>
       ) : (
@@ -498,9 +494,7 @@ ${inviteLink}`;
                 width: "100%",
                 padding: 12,
                 background: copied ? "rgba(16,185,129,0.18)" : C.glass,
-                border: `1px solid ${
-                  copied ? C.emerald : C.glassBdr
-                }`,
+                border: `1px solid ${copied ? C.emerald : C.glassBdr}`,
                 borderRadius: 11,
                 color: copied ? C.emerald : "white",
                 fontSize: 12,
@@ -599,9 +593,7 @@ ${inviteLink}`;
                   fontFamily: "inherit",
                 }}
               >
-                {copyMessage === i
-                  ? "✓ Copied!"
-                  : "📋 Copy this message"}
+                {copyMessage === i ? "✓ Copied!" : "📋 Copy this message"}
               </button>
             </div>
           ))}

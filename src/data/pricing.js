@@ -1,51 +1,58 @@
+
 export const PRO_FEATURES = [
   {
-    id:    'unlimited_connect',
-    emoji: '💬',
-    label: 'Unlimited AI messages',
-    desc:  'No daily limit on Connect generations',
+    id: "unlimited_decisions",
+    emoji: "⚡",
+    label: "Unlimited decisions",
+    desc: "No daily limit — decide as much as you want",
   },
   {
-    id:    'custom_photo',
-    emoji: '🖼️',
-    label: 'Custom photo avatar',
-    desc:  'Upload your own profile picture from your gallery',
+    id: "voice_connect",
+    emoji: "🎙️",
+    label: "Voice input for Connect",
+    desc: "Speak instead of type — AI understands your voice",
+    soon: true,
   },
   {
-    id:    'exclusive_avatars',
-    emoji: '✨',
-    label: 'Exclusive Pro avatars',
-    desc:  '12 premium avatars only available to Pro members',
+    id: "custom_photo",
+    emoji: "🖼️",
+    label: "Custom photo avatar",
+    desc: "Upload your own profile picture",
   },
   {
-    id:    'pro_badge',
-    emoji: '👑',
-    label: 'Pro badge on profile',
-    desc:  'Show off your Pro status everywhere',
+    id: "exclusive_avatars",
+    emoji: "✨",
+    label: "Exclusive Pro avatars",
+    desc: "12 premium avatars only for Pro members",
   },
   {
-    id:    'no_ads',
-    emoji: '🚫',
-    label: 'Ad-free forever',
-    desc:  'Skip any future ads',
+    id: "pro_badge",
+    emoji: "👑",
+    label: "Pro badge on profile",
+    desc: "Show off your Pro status",
   },
 ];
 
 export const PRICING = {
-  monthly: { price: '$2.50', period: '/month'     },
-  yearly:  { price: '$14.99', period: '/year', badge: 'Save 58%' },
+  monthly: {
+    price: "$2.50",
+    period: "/month",
+  },
+  yearly: {
+    price: "$14.99",
+    period: "/year",
+    badge: "Save 50%",
+  },
 };
-
-export const FREE_DAILY_CONNECT_LIMIT = 5;
 
 // Free avatars — available to everyone
 export const FREE_AVATARS = [
-  '🎲', '😎', '🦊', '🐱', '🐼', '🦁',
-  '🐸', '🦄', '👽', '🤖', '🌟', '🔥',
+  "🎲", "😎", "🦊", "🐱", "🐼", "🦁",
+  "🐸", "🦄", "👽", "🤖", "🌟", "🔥",
 ];
 
-// Pro-only avatars — only unlocked after subscription
+// Pro-only avatars
 export const PRO_AVATARS = [
-  '💎', '🌙', '⚡', '🎯', '👑', '🔮',
-  '🌺', '🦋', '🐉', '🦅', '🌈', '💫',
+  "💎", "🌙", "⚡", "🎯", "👑", "🔮",
+  "🌺", "🦋", "🐉", "🦅", "🌈", "💫",
 ];

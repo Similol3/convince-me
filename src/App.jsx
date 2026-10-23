@@ -1,12 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { C } from "./tokens";
 import { supabase } from "./lib/supabase";
-import {
-  getSession,
-  onAuthChange,
-  getOrCreateProfile,
-  signOut,
-} from "./lib/auth";
+import { getSession, onAuthChange, getOrCreateProfile, signOut } from "./lib/auth";
 import { getGuestUser, updateGuestUser } from "./lib/guests";
 import Header from "./components/Header";
 import BottomNav from "./components/BottomNav";
@@ -26,29 +21,22 @@ import Profile from "./screens/Profile";
 import Connect from "./screens/Connect";
 import Upgrade from "./screens/Upgrade";
 import Leaderboard from "./screens/Leaderboard";
-import {
-  isDecisionLimitReached,
-  incrementDecisionCount,
-  getTodayDecisionCount,
-  updateStreak,
-} from "./lib/decisions";
-import {
-  promptNotifications,
-  scheduleStreakReminder as scheduleReminder,
-} from "./lib/notifications";
+import { isDecisionLimitReached, incrementDecisionCount, getTodayDecisionCount, updateStreak } from "./lib/decisions";
+import { promptNotifications, scheduleStreakReminder as scheduleReminder } from "./lib/notifications";
 import ProAd from "./screens/ProAd";
 import InstallBanner from "./components/InstallBanner";
 import Support from "./screens/Support";
 import ResetPassword from "./screens/ResetPassword";
 import Friends from "./screens/Friends";
+import Invite from "./screens/Invite";
+import Feedback from "./screens/Feedback";
 
 export default function App() {
   const [session, setSession] = useState(null);
   const [authReady, setAuthReady] = useState(false);
-  const [authModal, setAuthModal] = useState(null); // null | 'login' | 'signup' | 'forgot'
+  const [authModal, setAuthModal] = useState(null);
   const [showProSuccess, setShowProSuccess] = useState(false);
   const [showProAd, setShowProAd] = useState(false);
-
   const [screen, setScreen] = useState(0);
   const [optA, setOptA] = useState("");
   const [optB, setOptB] = useState("");
@@ -61,33 +49,26 @@ export default function App() {
   const [aiRecommendation, setAiRecommendation] = useState(null);
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [decisionWinner, setDecisionWinner] = useState("");
+  const [showFeedback, setShowFeedback] = useState(false);
+  const feedbackTimer = useRef(null);
+  const firstDecisionScheduled = useRef(false);
 
-  // ── Auth listener ──────────────────────────────────────
   useEffect(() => {
     getSession().then((s) => {
       setSession(s);
       setAuthReady(true);
     });
-
     const { data: listener } = onAuthChange((event, s) => {
       setSession(s);
       if (s) setAuthModal(null);
-
-      // Detect password recovery link
-      if (event === "PASSWORD_RECOVERY") {
-        setShowResetPassword(true);
-      }
+      if (event === "PASSWORD_RECOVERY") setShowResetPassword(true);
     });
-
     return () => listener?.subscription?.unsubscribe();
   }, []);
 
-  // ── Load user (real or guest) ──────────────────────────
   useEffect(() => {
     if (!authReady) return;
-
     if (session?.user) {
-      // Real user — load from Supabase
       getOrCreateProfile(session.user).then((profile) => {
         if (profile) {
           setUser(profile);
@@ -95,28 +76,22 @@ export default function App() {
         }
       });
     } else {
-      // No session — use guest
       const guest = getGuestUser();
       setUser(guest);
       setAvatar(guest.avatar || "🎲");
     }
   }, [session, authReady]);
 
-  // ── Check for payment success on load ─────────────────
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const paymentStatus = params.get("payment");
-
     if (paymentStatus === "success") {
       window.history.replaceState({}, "", window.location.pathname);
-
-      // Refresh user data first, THEN show success screen
       if (session?.user) {
         getOrCreateProfile(session.user).then((profile) => {
           if (profile) {
             setUser(profile);
             setAvatar(profile.avatar || "🎲");
-
             scheduleReminder(profile.streak || 0);
             setTimeout(() => promptNotifications(), 3000);
           }
@@ -130,16 +105,17 @@ export default function App() {
     }
   }, [session]);
 
-  // ── Navigation ─────────────────────────────────────────
+  useEffect(() => () => {
+    if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
+  }, []);
+
   const go = (n, a, b, ans, cat, rec) => {
-    // Check decision limit when starting a new decision
     if (n === 1 && !user?.is_pro) {
       if (isDecisionLimitReached(user?.is_pro, user?.bonus_decisions || 0)) {
         setShowProAd(true);
         return;
       }
     }
-
     if (a !== undefined) setOptA(a);
     if (b !== undefined) setOptB(b);
     if (ans !== undefined) setAnswers(ans);
@@ -157,34 +133,38 @@ export default function App() {
   };
 
   async function handleDecided(result) {
+    // Capture this before updating the user's decision count.
+    const totalDecisions = (user?.total_decisions || 0) + 1;
     setLastResult(result);
-    setDecisionWinner(result?.winner || ""); // ← add this line
+    setDecisionWinner(result?.winner || "");
     incrementDecisionCount();
+
+    if (totalDecisions === 1 && !firstDecisionScheduled.current) {
+      firstDecisionScheduled.current = true;
+      feedbackTimer.current = setTimeout(() => setShowFeedback(true), 3000);
+    }
 
     if (user?.is_guest) {
       const updated = updateGuestUser({
         xp: (user.xp || 0) + 10,
-        total_decisions: (user.total_decisions || 0) + 1,
+        total_decisions: totalDecisions,
       });
       setUser(updated);
     } else if (user?.id) {
       const newStreak = await updateStreak(user.id);
-      if (newStreak !== null) {
-        setUser((prev) => ({
-          ...prev,
+      setUser((prev) => ({
+        ...prev,
+        ...(newStreak !== null ? {
           streak: newStreak,
           last_streak_date: new Date().toISOString().split("T")[0],
-          total_decisions: (prev?.total_decisions || 0) + 1,
-          xp: (prev?.xp || 0) + 10,
-        }));
-      }
-      await supabase
-        .from("users")
-        .update({
-          xp: (user.xp || 0) + 10,
-          total_decisions: (user.total_decisions || 0) + 1,
-        })
-        .eq("id", user.id);
+        } : {}),
+        total_decisions: (prev?.total_decisions || 0) + 1,
+        xp: (prev?.xp || 0) + 10,
+      }));
+      await supabase.from("users").update({
+        xp: (user.xp || 0) + 10,
+        total_decisions: totalDecisions,
+      }).eq("id", user.id);
     }
   }
 
@@ -194,10 +174,7 @@ export default function App() {
       const updated = updateGuestUser({ avatar: a, avatar_image: null });
       setUser(updated);
     } else if (user) {
-      await supabase
-        .from("users")
-        .update({ avatar: a, avatar_image: null })
-        .eq("id", user.id);
+      await supabase.from("users").update({ avatar: a, avatar_image: null }).eq("id", user.id);
       setUser({ ...user, avatar: a, avatar_image: null });
     }
   }
@@ -207,10 +184,7 @@ export default function App() {
       const updated = updateGuestUser({ avatar_image: base64, avatar: null });
       setUser(updated);
     } else if (user) {
-      await supabase
-        .from("users")
-        .update({ avatar_image: base64, avatar: null })
-        .eq("id", user.id);
+      await supabase.from("users").update({ avatar_image: base64, avatar: null }).eq("id", user.id);
       setUser({ ...user, avatar_image: base64, avatar: null });
     }
   }
@@ -224,34 +198,14 @@ export default function App() {
     go(0);
   }
 
-  function requireAuth(action) {
-    if (user?.is_guest) {
-      setAuthModal("signup");
-      return false;
-    }
-    return true;
-  }
-
   const headerConfig = {
-    0: {
-      showBack: false,
-      streak: user?.is_guest ? null : user?.streak?.toString(),
-    },
-    1: { showBack: true },
-    2: { showBack: true },
-    3: { showBack: false },
-    4: { showBack: false },
-    5: { showBack: true },
-    6: { showBack: false },
-    7: { showBack: true },
-    8: { showBack: false },
-    9: { showBack: false },
-    13: { showBack: true },
-    14: { showBack: true },
-    15: { showBack: true },
-  17: { showBack: true },
+    0: { showBack: false, streak: user?.is_guest ? null : user?.streak?.toString() },
+    1: { showBack: true }, 2: { showBack: true }, 3: { showBack: false },
+    4: { showBack: false }, 5: { showBack: true }, 6: { showBack: false },
+    7: { showBack: true }, 8: { showBack: false }, 9: { showBack: false },
+    13: { showBack: true }, 14: { showBack: true }, 15: { showBack: true },
+    16: { showBack: true }, 17: { showBack: true },
   };
-
   const hc = headerConfig[screen] || {};
 
   function handleBack() {
@@ -260,159 +214,48 @@ export default function App() {
     if (screen === 14) return go(0);
     go(Math.max(0, screen - 1));
   }
-  // Reset password screen
+
   if (showResetPassword) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          background: C.bg,
-          display: "flex",
-          justifyContent: "center",
-        }}
-      >
+      <div style={{ minHeight: "100vh", background: C.bg, display: "flex", justifyContent: "center" }}>
         <div style={{ width: "100%", maxWidth: 430 }}>
-          <ResetPassword
-            onDone={() => {
-              setShowResetPassword(false);
-              go(0);
-            }}
-          />
+          <ResetPassword onDone={() => { setShowResetPassword(false); go(0); }} />
         </div>
       </div>
     );
   }
 
-  // Loading state
   if (!authReady || !user) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          background: C.bg,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <div
-          style={{ fontSize: 40, animation: "float 1.5s ease-in-out infinite" }}
-        >
-          🎲
-        </div>
+      <div style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ fontSize: 40, animation: "float 1.5s ease-in-out infinite" }}>🎲</div>
       </div>
     );
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: C.bg,
-        display: "flex",
-        justifyContent: "center",
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Inter", sans-serif',
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: 430,
-          minHeight: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          background: C.bg,
-          position: "relative",
-        }}
-      >
-        {/* Pro Success overlay */}
-        {showProSuccess && (
-          <ProSuccess
-            go={(n) => {
-              setShowProSuccess(false);
-              go(n);
-            }}
-          />
-        )}
-
+    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", justifyContent: "center", fontFamily: '-apple-system, BlinkMacSystemFont, "Inter", sans-serif' }}>
+      <div style={{ width: "100%", maxWidth: 430, minHeight: "100vh", display: "flex", flexDirection: "column", background: C.bg, position: "relative" }}>
+        {showProSuccess && <ProSuccess go={(n) => { setShowProSuccess(false); go(n); }} />}
         {showProAd && (
           <ProAd
             decisionsUsed={getTodayDecisionCount()}
-            onUpgrade={() => {
-              setShowProAd(false);
-              go(13);
-            }}
+            onUpgrade={() => { setShowProAd(false); go(13); }}
             onDismiss={() => setShowProAd(false)}
           />
         )}
-        {/* Auth Modal overlay */}
         {authModal && (
-          <div
-            style={{
-              position: "fixed",
-              inset: 0,
-              zIndex: 200,
-              background: "rgba(0,0,0,0.85)",
-              display: "flex",
-              alignItems: "flex-end",
-            }}
-          >
-            <div
-              style={{
-                width: "100%",
-                maxWidth: 430,
-                margin: "0 auto",
-                background: C.bg,
-                borderRadius: "24px 24px 0 0",
-                maxHeight: "90vh",
-                overflowY: "auto",
-                border: `1px solid ${C.border}`,
-              }}
-            >
-              {/* Close button */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  padding: "16px 16px 0",
-                }}
-              >
-                <button
-                  onClick={() => setAuthModal(null)}
-                  style={{
-                    background: C.glass,
-                    border: `1px solid ${C.border}`,
-                    borderRadius: "50%",
-                    width: 32,
-                    height: 32,
-                    color: "white",
-                    fontSize: 16,
-                    cursor: "pointer",
-                  }}
-                >
-                  ✕
-                </button>
+          <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "flex-end" }}>
+            <div style={{ width: "100%", maxWidth: 430, margin: "0 auto", background: C.bg, borderRadius: "24px 24px 0 0", maxHeight: "90vh", overflowY: "auto", border: `1px solid ${C.border}` }}>
+              <div style={{ display: "flex", justifyContent: "flex-end", padding: "16px 16px 0" }}>
+                <button onClick={() => setAuthModal(null)} style={{ background: C.glass, border: `1px solid ${C.border}`, borderRadius: "50%", width: 32, height: 32, color: "white", fontSize: 16, cursor: "pointer" }}>✕</button>
               </div>
-
-              {authModal === "login" && (
-                <Login
-                  onSwitch={setAuthModal}
-                  onClose={() => setAuthModal(null)}
-                />
-              )}
-              {authModal === "signup" && (
-                <Signup
-                  onSwitch={setAuthModal}
-                  onClose={() => setAuthModal(null)}
-                />
-              )}
-              {authModal === "forgot" && (
-                <ForgotPassword onSwitch={setAuthModal} />
-              )}
+              {authModal === "login" && <Login onSwitch={setAuthModal} onClose={() => setAuthModal(null)} />}
+              {authModal === "signup" && <Signup onSwitch={setAuthModal} onClose={() => setAuthModal(null)} />}
+              {authModal === "forgot" && <ForgotPassword onSwitch={setAuthModal} />}
             </div>
           </div>
         )}
-
         <Header
           showBack={hc.showBack}
           streak={hc.streak}
@@ -426,67 +269,26 @@ export default function App() {
           onUpgrade={() => go(13)}
           onBack={handleBack}
         />
-
         <div style={{ flex: 1, overflowY: "auto", paddingBottom: 110 }}>
-          {screen === 0 && (
-            <Home
-              go={go}
-              user={user}
-              bonusDecisions={user?.bonus_decisions || 0}
-            />
-          )}
+          {screen === 0 && <Home go={go} user={user} bonusDecisions={user?.bonus_decisions || 0} />}
           {screen === 1 && <Options go={go} category={category} user={user} />}
           {screen === 2 && <Questions go={go} category={category} />}
-          {screen === 3 && (
-            <Reveal
-              optA={optA}
-              optB={optB}
-              answers={answers}
-              user={user}
-              category={category}
-              aiRecommendation={aiRecommendation}
-              go={go}
-              onDecided={handleDecided}
-            />
-          )}
-          {screen === 4 && (
-            <Share
-              winner={decisionWinner}
-              aiRecommendation={aiRecommendation}
-              go={go}
-            />
-          )}
-          {screen === 5 && (
-            <Rematch result={lastResult} onDecided={handleDecided} go={go} />
-          )}
+          {screen === 3 && <Reveal optA={optA} optB={optB} answers={answers} user={user} category={category} aiRecommendation={aiRecommendation} go={go} onDecided={handleDecided} />}
+          {screen === 4 && <Share winner={decisionWinner} aiRecommendation={aiRecommendation} go={go} />}
+          {screen === 5 && <Rematch result={lastResult} onDecided={handleDecided} go={go} />}
           {screen === 6 && <Battles user={user} />}
-          {screen === 7 && (
-            <Settings user={user} onSignOut={handleSignOut} go={go} />
-          )}
-          {screen === 8 && (
-            <Profile
-              user={user}
-              go={go}
-              avatar={avatar}
-              onSignIn={() => setAuthModal("login")}
-              onSignUp={() => setAuthModal("signup")}
-            />
-          )}
+          {screen === 7 && <Settings user={user} onSignOut={handleSignOut} go={go} />}
+          {screen === 8 && <Profile user={user} go={go} avatar={avatar} onSignIn={() => setAuthModal("login")} onSignUp={() => setAuthModal("signup")} />}
           {screen === 9 && <Connect user={user} go={go} />}
-          {screen === 13 && (
-            <Upgrade
-              user={user}
-              go={go}
-              onRequireLogin={() => setAuthModal("signup")}
-            />
-          )}
-
+          {screen === 13 && <Upgrade user={user} go={go} onRequireLogin={() => setAuthModal("signup")} />}
           {screen === 14 && <Leaderboard user={user} />}
           {screen === 15 && <Support user={user} go={go} />}
+          {screen === 16 && <Invite user={user} go={go} />}
           {screen === 17 && <Friends user={user} go={go} />}
         </div>
         <InstallBanner />
         <BottomNav active={navActive} setActive={handleNav} />
+        {showFeedback && <Feedback onClose={() => setShowFeedback(false)} />}
       </div>
     </div>
   );
